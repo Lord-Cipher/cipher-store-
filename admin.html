@@ -2156,6 +2156,24 @@
             <div class="stat-label">Active Coupons</div>
           </div>
         </div>
+
+        <div class="card" style="margin-top:16px;">
+          <h2 class="card-title"><i class="fas fa-chart-line"></i> Store Insights</h2>
+          <div class="stats-grid">
+            <div class="stat-card"><div class="stat-value" id="insightConfirmedRevenue">$0</div><div class="stat-label">Verified Revenue</div></div>
+            <div class="stat-card"><div class="stat-value" id="insightConversion">0%</div><div class="stat-label">Payment Conversion</div></div>
+            <div class="stat-card"><div class="stat-value" id="insightCouponSavings">$0</div><div class="stat-label">Coupon Savings</div></div>
+            <div class="stat-card"><div class="stat-value" id="insightGamePlays">0</div><div class="stat-label">Game Plays</div></div>
+            <div class="stat-card"><div class="stat-value" id="insightReferralCount">0</div><div class="stat-label">Qualified Referrals</div></div>
+            <div class="stat-card"><div class="stat-value" id="insightRewardPoints">0</div><div class="stat-label">Reward Points Issued</div></div>
+          </div>
+          <div id="analyticsBreakdown" style="margin-top:14px;color:#aaa;font-size:12px;"></div>
+          <div id="paymentAuditPreview" style="margin-top:14px;"></div>
+          <div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:15px;">
+            <button class="btn" id="exportStoreDataBtn"><i class="fas fa-file-export"></i> Export Store Data</button>
+            <button class="btn" id="refreshInsightsBtn"><i class="fas fa-sync-alt"></i> Refresh Insights</button>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -2364,6 +2382,17 @@
         <div class="input-group">
           <label style="display: flex; align-items: center; gap: 10px;">
             <div class="toggle-switch">
+              <input type="checkbox" id="couponAutoDelete" checked>
+              <span class="toggle-slider"></span>
+            </div>
+            <span><i class="fas fa-trash-alt"></i> Automatically Delete</span>
+          </label>
+          <small style="color: #999; font-size: 12px;">Remove this coupon automatically after it expires or reaches its usage limit</small>
+        </div>
+
+        <div class="input-group">
+          <label style="display: flex; align-items: center; gap: 10px;">
+            <div class="toggle-switch">
               <input type="checkbox" id="couponActive" checked>
               <span class="toggle-slider"></span>
             </div>
@@ -2378,6 +2407,7 @@
 
       <div class="card">
         <h2 class="card-title"><i class="fas fa-tickets-alt"></i> All Coupons</h2>
+        <div style="margin: -8px 0 16px; color: rgba(255,255,255,0.6); font-size: 12px;"><i class="fas fa-sync-alt"></i> Auto-delete runs on the payment service and removes expired or fully used coupons.</div>
         <div class="search-box">
           <input type="text" id="couponSearch" placeholder="🔍 Search coupons...">
         </div>
@@ -2476,8 +2506,8 @@
             <span style="color: #00ffff; font-weight: bold;" id="adminEmailDisplay">-</span>
           </div>
           <div style="display: flex; justify-content: space-between;">
-            <span style="color: #999;"><i class="fas fa-key"></i> Admin Password:</span>
-            <span style="color: #00ffff; font-weight: bold;" id="adminPasswordDisplay">••••••••</span>
+            <span style="color: #999;"><i class="fas fa-key"></i> Authentication:</span>
+            <span style="color: #00ff88; font-weight: bold;">Managed by Firebase Auth</span>
           </div>
         </div>
       </div>
@@ -2901,7 +2931,6 @@
           completed: true,
           adminEmail: email,
           adminName: name,
-          adminPassword: password,
           setupDate: new Date().toISOString()
         });
 
@@ -3021,8 +3050,105 @@
       }
     }
 
+
+    async function loadStoreInsights() {
+      try {
+        const [ordersSnapshot, usersSnapshot, couponsSnapshot, gamesSnapshot] = await Promise.all([
+          window.dbGet(window.dbRef(window.db, 'orders')),
+          window.dbGet(window.dbRef(window.db, 'users')),
+          window.dbGet(window.dbRef(window.db, 'coupons')),
+          window.dbGet(window.dbRef(window.db, 'gamePlays'))
+        ]);
+        const orders = ordersSnapshot.exists() ? Object.values(ordersSnapshot.val()) : [];
+        const users = usersSnapshot.exists() ? usersSnapshot.val() : {};
+        const coupons = couponsSnapshot.exists() ? Object.values(couponsSnapshot.val()) : [];
+        const games = gamesSnapshot.exists() ? Object.values(gamesSnapshot.val()) : [];
+        const paidOrders = orders.filter(order => order.status === 'confirmed' && order.paymentProvider === 'oxapay');
+        const pendingOrders = orders.filter(order => order.paymentProvider === 'oxapay' && order.status !== 'confirmed');
+        const revenue = paidOrders.reduce((sum, order) => sum + Number(order.finalAmount || 0), 0);
+        const savings = paidOrders.reduce((sum, order) => sum + Number(order.discountAmount || 0), 0);
+        const gamePlays = games.reduce((sum, game) => sum + Number(game.playCount || (game.lastPlayed ? 1 : 0)), 0);
+        const qualifiedReferrals = Object.values(users).reduce((sum, user) => sum + Object.values(user.referrals || {}).filter(referral => referral.status === 'qualified').length, 0);
+        const rewardPoints = Object.values(users).reduce((sum, user) => sum + Number(user.rewards?.lifetimePoints || 0), 0);
+        const conversion = paidOrders.length + pendingOrders.length ? (paidOrders.length / (paidOrders.length + pendingOrders.length)) * 100 : 0;
+        document.getElementById('insightConfirmedRevenue').textContent = formatCurrency(revenue);
+        document.getElementById('insightConversion').textContent = `${conversion.toFixed(1)}%`;
+        document.getElementById('insightCouponSavings').textContent = formatCurrency(savings);
+        document.getElementById('insightGamePlays').textContent = String(gamePlays);
+        document.getElementById('insightReferralCount').textContent = String(qualifiedReferrals);
+        document.getElementById('insightRewardPoints').textContent = String(rewardPoints);
+        document.getElementById('analyticsBreakdown').innerHTML = `<strong>Operational summary:</strong> ${paidOrders.length} verified paid orders, ${pendingOrders.length} unresolved payment sessions, ${coupons.filter(coupon => coupon.isActive).length} active coupon campaigns, and ${Object.keys(users).length} registered accounts.`;
+      } catch (error) {
+        console.error('Store insights failed:', error);
+        const target = document.getElementById('analyticsBreakdown');
+        if (target) target.textContent = 'Insights are temporarily unavailable.';
+      }
+    }
+
+    function exportStoreData() {
+      Promise.all(['products', 'orders', 'coupons', 'meta/brand'].map(path => window.dbGet(window.dbRef(window.db, path)))).then(snapshots => {
+        const payload = {};
+        ['products', 'orders', 'coupons', 'brand'].forEach((key, index) => { payload[key] = snapshots[index].exists() ? snapshots[index].val() : {}; });
+        payload.exportedAt = new Date().toISOString();
+        const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+        const anchor = document.createElement('a');
+        anchor.href = URL.createObjectURL(blob);
+        anchor.download = `cipher-store-export-${new Date().toISOString().slice(0, 10)}.json`;
+        anchor.click();
+        URL.revokeObjectURL(anchor.href);
+        window.showNotification('Store export downloaded');
+      }).catch(error => window.showNotification(`Export failed: ${error.message}`, 5000));
+    }
+
+    document.getElementById('refreshInsightsBtn')?.addEventListener('click', loadStoreInsights);
+    document.getElementById('exportStoreDataBtn')?.addEventListener('click', exportStoreData);
+
+
+    async function loadMaintenanceMode() {
+      try {
+        const snapshot = await window.dbGet(window.dbRef(window.db, 'meta/store/maintenance'));
+        const enabled = snapshot.exists() && snapshot.val() === true;
+        const toggle = document.getElementById('maintenanceModeToggle');
+        if (toggle) toggle.checked = enabled;
+        const status = document.getElementById('maintenanceModeStatus');
+        if (status) status.textContent = enabled ? 'New checkout is currently paused.' : 'Checkout is operating normally.';
+      } catch (error) {
+        console.error('Maintenance mode load failed:', error);
+      }
+    }
+
+    async function saveMaintenanceMode() {
+      const toggle = document.getElementById('maintenanceModeToggle');
+      if (!toggle) return;
+      try {
+        await window.dbSet(window.dbRef(window.db, 'meta/store/maintenance'), toggle.checked);
+        const status = document.getElementById('maintenanceModeStatus');
+        if (status) status.textContent = toggle.checked ? 'New checkout is paused server-side.' : 'Checkout is live again.';
+        window.showNotification(toggle.checked ? 'Checkout paused' : 'Checkout resumed');
+      } catch (error) {
+        window.showNotification(`Could not save checkout status: ${error.message}`, 'error');
+      }
+    }
+
+    async function loadPaymentAuditPreview() {
+      try {
+        const snapshot = await window.dbGet(window.dbRef(window.db, 'paymentEvents'));
+        const events = snapshot.exists() ? Object.values(snapshot.val()).sort((a, b) => new Date(b.receivedAt || 0) - new Date(a.receivedAt || 0)).slice(0, 6) : [];
+        const target = document.getElementById('paymentAuditPreview');
+        if (!target) return;
+        target.innerHTML = `<div style="color:#00ffff;font-weight:700;margin-bottom:8px;"><i class="fas fa-history"></i> Recent gateway events</div>` + (events.length ? events.map(event => `<div style="display:flex;justify-content:space-between;gap:10px;border-bottom:1px solid rgba(255,255,255,.07);padding:7px 0;font-size:11px;"><span>${escapeHtml(event.status || 'unknown')} · ${escapeHtml(event.trackId || event.sessionId || 'unlinked')}</span><span style="color:#aaa;">${event.amount == null ? '—' : formatCurrency(event.amount)} · ${new Date(event.receivedAt || Date.now()).toLocaleString()}</span></div>`).join('') : '<div style="color:#999;font-size:12px;">No gateway webhook events recorded yet.</div>');
+      } catch (error) {
+        console.error('Payment audit preview failed:', error);
+      }
+    }
+
+    document.getElementById('saveMaintenanceModeBtn')?.addEventListener('click', saveMaintenanceMode);
+    loadMaintenanceMode();
+    loadPaymentAuditPreview();
+
     async function updateStats() {
       try {
+        loadStoreInsights();
         const productsSnapshot = await window.dbGet(window.dbRef(window.db, 'products'));
         const totalProducts = productsSnapshot.exists() ? Object.keys(productsSnapshot.val()).length : 0;
         document.getElementById('dashTotalProducts').textContent = totalProducts;
@@ -3071,14 +3197,6 @@
 
         document.getElementById('dashTotalCoupons').textContent = activeCoupons;
 
-        const adminSetupSnapshot = await window.dbGet(window.dbRef(window.db, 'meta/adminSetup'));
-        if (adminSetupSnapshot.exists()) {
-          const adminData = adminSetupSnapshot.val();
-          if (adminData.adminPassword) {
-            document.getElementById('adminPasswordDisplay').textContent = adminData.adminPassword;
-          }
-        }
-        
       } catch (error) {
         console.error('Error updating stats:', error);
       }
@@ -3706,7 +3824,8 @@
           order.id.toLowerCase().includes(searchTerm) ||
           (order.productSnapshot?.title && order.productSnapshot.title.toLowerCase().includes(searchTerm)) ||
           (order.userInput?.name && order.userInput.name.toLowerCase().includes(searchTerm)) ||
-          (order.userInput?.utrId && order.userInput.utrId.toLowerCase().includes(searchTerm))
+          (order.userInput?.utrId && order.userInput.utrId.toLowerCase().includes(searchTerm)) ||
+          (order.paymentTrackId && order.paymentTrackId.toLowerCase().includes(searchTerm))
         );
       }
 
@@ -3745,9 +3864,10 @@
         <div class="order-info">
           <div><span class="order-field">Product:</span> <span class="order-value">${escapeHtml(order.productSnapshot?.title || 'N/A')}</span></div>
           <div><span class="order-field">Customer:</span> <span class="order-value">${escapeHtml(order.userInput?.name || 'N/A')}</span></div>
-          <div><span class="order-field">UTR ID:</span> <span class="order-value">${escapeHtml(order.userInput?.utrId || 'N/A')}</span></div>
+          <div><span class="order-field">${order.paymentProvider === 'oxapay' ? 'Payment' : 'UTR ID'}:</span> <span class="order-value">${escapeHtml(order.paymentTrackId || order.userInput?.utrId || 'N/A')}</span></div>
+          ${order.paymentProvider === 'oxapay' ? `<div><span class="order-field">Gateway:</span> <span class="order-value" style="color: #00ff88;">OxaPay ${escapeHtml(order.gatewayStatus || 'verified')}</span></div>` : ''}
           <div><span class="order-field">Price:</span> <span class="order-value" style="color: #00ff88;">${formatCurrency(order.finalAmount || order.productSnapshot?.discountedPrice || 0)}</span></div>
-          ${order.couponUsed ? `<div><span class="order-field">Coupon:</span> <span class="order-value" style="color: #ffa500;">${escapeHtml(order.couponUsed)} (+${formatCurrency(order.discountAmount || 0)})</span></div>` : ''}
+          ${order.couponUsed ? `<div><span class="order-field">Coupon:</span> <span class="order-value" style="color: #ffa500;">${escapeHtml(order.couponUsed)} (-${formatCurrency(order.discountAmount || 0)})</span></div>` : ''}
         </div>
         <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(0, 255, 255, 0.2);">
           <label style="color: #00ffff; font-size: 14px; margin-bottom: 8px; display: block;"><i class="fas fa-info-circle"></i> Order Status:</label>
@@ -3976,6 +4096,10 @@
             <span class="coupon-detail-label">Expires:</span>
             <span class="coupon-detail-value">${expiryText}</span>
           </div>
+          <div class="coupon-detail-item">
+            <span class="coupon-detail-label">Auto-delete:</span>
+            <span class="coupon-detail-value" style="color: ${coupon.autoDelete !== false ? '#00ff88' : '#999'};">${coupon.autoDelete !== false ? 'Enabled' : 'Disabled'}</span>
+          </div>
         </div>
         <div class="btn-group">
           <button class="btn-small" style="background: linear-gradient(135deg, #00ffff, #a855f7); color: #000;" data-copy-code="${escapeHtml(coupon.code)}"><i class="fas fa-copy"></i> Copy</button>
@@ -4016,6 +4140,7 @@
       const usageLimit = parseInt(document.getElementById('couponUsageLimit').value) || 0;
       const expiryDate = document.getElementById('couponExpiryDate').value;
       const description = document.getElementById('couponDescription').value.trim();
+      const autoDelete = document.getElementById('couponAutoDelete').checked;
       const isActive = document.getElementById('couponActive').checked;
 
       if (!code) {
@@ -4061,6 +4186,7 @@
         usageLimit: usageLimit,
         expiryDate: expiryDate || null,
         description: description,
+        autoDelete: autoDelete,
         isActive: isActive,
         updatedAt: new Date().toISOString()
       };
@@ -4117,6 +4243,7 @@
           document.getElementById('couponUsageLimit').value = coupon.usageLimit || 0;
           document.getElementById('couponExpiryDate').value = coupon.expiryDate || '';
           document.getElementById('couponDescription').value = coupon.description || '';
+          document.getElementById('couponAutoDelete').checked = coupon.autoDelete !== false;
           document.getElementById('couponActive').checked = coupon.isActive;
           
           updateDiscountInput();
@@ -4161,6 +4288,7 @@
       document.getElementById('couponUsageLimit').value = '';
       document.getElementById('couponExpiryDate').value = '';
       document.getElementById('couponDescription').value = '';
+      document.getElementById('couponAutoDelete').checked = true;
       document.getElementById('couponActive').checked = true;
       updateDiscountInput();
       document.getElementById('saveCouponBtn').innerHTML = '<i class="fas fa-save"></i> Save Coupon';

@@ -1,0 +1,15 @@
+{
+  "name": "cipher-store",
+  "version": "1.0.0",
+  "private": true,
+  "type": "commonjs",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "check": "node --check server.js"
+  },
+  "dependencies": {
+    "firebase-admin": "^13.5.0"
+  }
+}
+

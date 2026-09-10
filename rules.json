@@ -1,0 +1,183 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+
+    "products": {
+      ".read": true,
+      "$productId": {
+        ".write": "auth != null && auth.token.admin === true"
+      }
+    },
+
+    "coupons": {
+      ".read": "auth != null",
+      "$couponId": {
+        ".write": "auth != null && auth.token.admin === true"
+      }
+    },
+
+    "meta": {
+      "brand": {
+        ".read": true,
+        ".write": "auth != null && auth.token.admin === true"
+      },
+      "contact": {
+        ".read": true,
+        ".write": "auth != null && auth.token.admin === true"
+      },
+      "store": {
+        ".read": "auth != null && auth.token.admin === true",
+        ".write": "auth != null && auth.token.admin === true"
+      },
+      "adminSetup": {
+        ".read": "auth != null && auth.token.admin === true",
+        ".write": false
+      }
+    },
+
+    "users": {
+      "$uid": {
+        ".read": "auth != null && (auth.uid === $uid || auth.token.admin === true)",
+
+        "profile": {
+          ".read": "auth != null && (auth.uid === $uid || auth.token.admin === true)",
+          ".write": "auth != null && (auth.uid === $uid || auth.token.admin === true)"
+        },
+
+        "bookmarks": {
+          ".read": "auth != null && (auth.uid === $uid || auth.token.admin === true)",
+          ".write": "auth != null && (auth.uid === $uid || auth.token.admin === true)"
+        },
+
+        "wishlist": {
+          ".read": "auth != null && (auth.uid === $uid || auth.token.admin === true)",
+          ".write": false
+        },
+
+        "purchases": {
+          ".read": "auth != null && (auth.uid === $uid || auth.token.admin === true)",
+          ".write": false
+        },
+
+        "rewards": {
+          ".read": "auth != null && (auth.uid === $uid || auth.token.admin === true)",
+          ".write": false
+        },
+
+        "rewardLedger": {
+          ".read": "auth != null && (auth.uid === $uid || auth.token.admin === true)",
+          ".write": false
+        },
+
+        "storeCreditsCents": {
+          ".read": "auth != null && (auth.uid === $uid || auth.token.admin === true)",
+          ".write": false
+        },
+
+        "creditReservations": {
+          ".read": "auth != null && (auth.uid === $uid || auth.token.admin === true)",
+          ".write": false
+        },
+
+        "achievements": {
+          ".read": "auth != null && (auth.uid === $uid || auth.token.admin === true)",
+          ".write": false
+        },
+
+        "referralCode": {
+          ".read": "auth != null && (auth.uid === $uid || auth.token.admin === true)",
+          ".write": false
+        },
+
+        "referralCodeUsed": {
+          ".read": "auth != null && (auth.uid === $uid || auth.token.admin === true)",
+          ".write": false
+        },
+
+        "referredBy": {
+          ".read": "auth != null && (auth.uid === $uid || auth.token.admin === true)",
+          ".write": false
+        },
+
+        "referrals": {
+          ".read": "auth != null && (auth.uid === $uid || auth.token.admin === true)",
+          ".write": false
+        },
+
+        "referralRewards": {
+          ".read": "auth != null && (auth.uid === $uid || auth.token.admin === true)",
+          ".write": false
+        },
+
+        "notifications": {
+          ".read": "auth != null && (auth.uid === $uid || auth.token.admin === true)",
+          ".write": false
+        },
+
+        "downloadHistory": {
+          ".read": "auth != null && (auth.uid === $uid || auth.token.admin === true)",
+          ".write": false
+        },
+
+        "gamePlays": {
+          ".read": "auth != null && (auth.uid === $uid || auth.token.admin === true)",
+          ".write": false
+        },
+
+        "support": {
+          ".read": "auth != null && (auth.uid === $uid || auth.token.admin === true)",
+          ".write": "auth != null && (auth.uid === $uid || auth.token.admin === true)"
+        }
+      }
+    },
+
+    "orders": {
+      "$orderId": {
+        ".read": "auth != null && (auth.token.admin === true || data.child('userId').val() === auth.uid)",
+        ".write": false
+      }
+    },
+
+    "paymentSessions": {
+      "$sessionId": {
+        ".read": "auth != null && (auth.token.admin === true || data.child('userId').val() === auth.uid)",
+        ".write": false
+      }
+    },
+
+    "paymentEvents": {
+      ".read": "auth != null && auth.token.admin === true",
+      ".write": false
+    },
+
+    "paymentEventDedupe": {
+      ".read": false,
+      ".write": false
+    },
+
+    "reviews": {
+      ".read": true,
+      ".write": false
+    },
+
+    "priceAlerts": {
+      "$uid": {
+        ".read": "auth != null && (auth.uid === $uid || auth.token.admin === true)",
+        ".write": false
+      }
+    },
+
+    "referralCodes": {
+      ".read": false,
+      ".write": false
+    },
+
+    "gamePlays": {
+      "$uid": {
+        ".read": "auth != null && (auth.uid === $uid || auth.token.admin === true)",
+        ".write": false
+      }
+    }
+  }
+}

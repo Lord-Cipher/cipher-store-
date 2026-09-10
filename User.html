@@ -2139,9 +2139,9 @@
 
     /* Shimmer Loading Effect */
     .shimmer {
-      background: linear-gradient(90deg, 
-        rgba(255, 255, 255, 0.05) 0%, 
-        rgba(255, 255, 255, 0.1) 50%, 
+      background: linear-gradient(90deg,
+        rgba(255, 255, 255, 0.05) 0%,
+        rgba(255, 255, 255, 0.1) 50%,
         rgba(255, 255, 255, 0.05) 100%);
       background-size: 200% 100%;
       animation: shimmer 1.5s infinite;
@@ -2433,6 +2433,85 @@
       cursor: pointer;
       touch-action: none;
     }
+    .oxapay-payment-panel {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 16px;
+      margin: 18px 0;
+      border-radius: 16px;
+      background: linear-gradient(135deg, rgba(0, 255, 255, 0.1), rgba(168, 85, 247, 0.12));
+      border: 1px solid rgba(0, 255, 255, 0.25);
+    }
+    .oxapay-payment-icon {
+      width: 46px;
+      height: 46px;
+      display: grid;
+      place-items: center;
+      flex: 0 0 46px;
+      border-radius: 50%;
+      color: #111;
+      background: linear-gradient(135deg, #00ffff, #00ff88);
+      font-size: 24px;
+      box-shadow: 0 0 20px rgba(0, 255, 255, 0.45);
+    }
+    .oxapay-payment-panel strong { color: #fff; display: block; margin-bottom: 4px; }
+    .oxapay-payment-panel p { color: rgba(255,255,255,0.68); font-size: 12px; line-height: 1.5; }
+    .payment-status {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 14px;
+      border-radius: 12px;
+      margin: 12px 0;
+      font-size: 13px;
+      line-height: 1.4;
+    }
+    .payment-status.pending { color: #ffcc80; background: rgba(255,165,0,0.1); border: 1px solid rgba(255,165,0,0.35); }
+    .payment-status.success { color: #00ff88; background: rgba(0,255,136,0.1); border: 1px solid rgba(0,255,136,0.35); }
+    .payment-status.error { color: #ff6b9d; background: rgba(255,0,110,0.1); border: 1px solid rgba(255,0,110,0.35); }
+    .payment-session-details { padding: 10px 12px; border-radius: 10px; background: rgba(0,0,0,0.25); color: rgba(255,255,255,0.66); font-size: 12px; margin-bottom: 12px; }
+    .wheel-outer { box-shadow: 0 0 30px rgba(0, 255, 255, 0.35), 0 12px 22px rgba(0,0,0,0.35), inset 0 0 0 4px rgba(255,255,255,0.12); }
+    .wheel { box-shadow: inset 0 0 0 2px rgba(255,255,255,0.12), inset 0 0 28px rgba(0,0,0,0.38); }
+    .wheel-center { box-shadow: 0 0 0 4px rgba(10,10,10,0.7), 0 0 18px rgba(0,255,255,0.6); }
+    .scratch-card-frame { background: linear-gradient(145deg, #00ffff, #a855f7); box-shadow: 0 0 30px rgba(0, 255, 255, 0.3), 0 15px 30px rgba(0,0,0,0.4); }
+    .scratch-card-frame::after { content: ''; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(120deg, transparent 20%, rgba(255,255,255,0.2) 48%, transparent 60%); transform: translateX(-120%); animation: scratchShimmer 2.8s ease-in-out infinite; }
+    @keyframes scratchShimmer { 0%, 55% { transform: translateX(-120%); } 100% { transform: translateX(120%); } }
+    .game-card:not(.coming-soon) { box-shadow: 0 10px 22px rgba(0,0,0,0.22); }
+    .game-card:not(.coming-soon):active { transform: translateY(0) scale(0.98); }
+
+    .hub-hero { display:flex; justify-content:space-between; gap:18px; align-items:center; padding:20px; border:1px solid rgba(0,255,255,.2); border-radius:18px; background:linear-gradient(135deg,rgba(0,255,255,.08),rgba(168,85,247,.12)); margin-bottom:18px; }
+    .hub-eyebrow { color:#00ffff; text-transform:uppercase; font-size:11px; letter-spacing:2px; }
+    .hub-hero h3 { margin:5px 0; font-size:25px; }
+    .hub-hero p { margin:0; color:#aaa; }
+    .hub-points { min-width:125px; text-align:center; padding:12px; border-radius:14px; background:rgba(0,0,0,.2); }
+    .hub-points strong { display:block; color:#00ff88; font-size:28px; }
+    .hub-points span, .hub-card span { display:block; color:#999; font-size:11px; margin-top:4px; }
+    .hub-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; }
+    .hub-card, .hub-section { border:1px solid rgba(255,255,255,.1); border-radius:14px; background:rgba(255,255,255,.035); padding:15px; }
+    .hub-card strong { display:block; font-size:22px; color:#fff; margin:10px 0 0; }
+    .hub-card-title, .hub-section-title { color:#00ffff; font-weight:700; font-size:13px; }
+    .hub-card .btn { margin-top:12px; width:100%; }
+    .hub-section { margin-top:14px; }
+    .hub-section-title { margin-bottom:12px; }
+    .hub-referral-row { display:flex; gap:9px; align-items:center; margin-top:9px; }
+    .hub-referral-row code { flex:1; color:#00ff88; font-size:16px; letter-spacing:1px; padding:9px; border-radius:8px; background:rgba(0,0,0,.24); }
+    .hub-list-row { display:flex; justify-content:space-between; gap:12px; padding:9px 0; border-bottom:1px solid rgba(255,255,255,.07); color:#eee; font-size:12px; }
+    .hub-list-row:last-child { border-bottom:0; }
+    .hub-list-row small, .hub-muted { color:#999; font-size:11px; }
+    .hub-pills { display:flex; flex-wrap:wrap; gap:8px; }
+    .hub-pill { display:inline-flex; align-items:center; gap:5px; padding:6px 9px; border-radius:999px; background:rgba(0,255,255,.1); color:#b9ffff; font-size:11px; }
+    .btn-small { padding:8px 10px !important; font-size:11px !important; }
+    .product-insights { border-top:1px solid rgba(255,255,255,.1); padding-top:15px; }
+    .insight-summary { display:flex; align-items:center; gap:10px; color:#aaa; font-size:12px; }
+    .insight-summary strong { color:#ffd166; font-size:24px; }
+    .review-stars { color:#ffd166; letter-spacing:1px; }
+    .insight-summary small { color:#888; }
+    .insight-actions { display:flex; flex-wrap:wrap; gap:8px; margin:12px 0; }
+    .review-row { border-top:1px solid rgba(255,255,255,.08); padding:10px 0; font-size:12px; }
+    .review-row p { color:#bbb; margin:6px 0 0; line-height:1.5; }
+    @media (max-width:700px) { .hub-grid { grid-template-columns:repeat(2,1fr); } .hub-hero { align-items:flex-start; flex-direction:column; } .hub-points { width:100%; box-sizing:border-box; } }
+
   </style>
 </head>
 <body>
@@ -2529,7 +2608,7 @@
 
       <h2 class="section-title"><i class="fas fa-shopping-bag"></i> Products</h2>
       <div id="productsGrid" class="products-grid"></div>
-      
+
       <!-- Pagination -->
       <div class="pagination" id="pagination" style="display: none;"></div>
     </div>
@@ -2542,7 +2621,7 @@
       <img id="modalImage" class="modal-image" src="" alt="Product">
       <h2 id="modalTitle" class="modal-title"></h2>
       <p id="modalDescription" class="modal-description"></p>
-      
+
       <!-- Screenshots Section -->
       <div class="screenshots-section" id="screenshotsSection" style="display: none;">
         <div class="screenshots-title">
@@ -2567,7 +2646,7 @@
     <div class="modal-content">
       <span class="modal-close" onclick="closeModal('checkoutModal')">×</span>
       <h2 class="modal-title"><i class="fas fa-credit-card"></i> Checkout</h2>
-      
+
       <div id="checkoutItems"></div>
 
       <!-- Coupon Section -->
@@ -2612,47 +2691,49 @@
     </div>
   </div>
 
-  <!-- Payment Modal (QR) -->
+  <!-- OxaPay Payment Modal -->
   <div id="paymentModal" class="modal">
     <div class="modal-content">
       <span class="modal-close" onclick="closeModal('paymentModal')">×</span>
-      <h2 class="modal-title"><i class="fas fa-qrcode"></i> Complete Payment</h2>
-      
+      <h2 class="modal-title"><i class="fas fa-shield-alt"></i> Secure Checkout</h2>
       <div class="price-section">
         <div style="text-align: center;">
-          <div style="color: #999; margin-bottom: 10px;">Total Amount to Pay</div>
+          <div style="color: #999; margin-bottom: 10px;">Amount to Pay</div>
           <span class="price-discount" id="paymentAmount">$0</span>
         </div>
       </div>
-
-      <img class="qr-image" src="https://i.ibb.co/RTNBtWmc/file-000000004df8724699e53cff0d1f183c.png" alt="QR Code">
-      <p class="info-text">
-        <i class="fas fa-info-circle"></i> Scan the QR code and complete payment. Enter your payment details below to confirm your order.
-      </p>
-      
-      <div class="input-group">
-        <label><i class="fas fa-dollar-sign"></i> Enter Your Amount</label>
-        <input type="number" id="userAmount" placeholder="Enter amount you paid" min="1" required>
-        <small style="color: #999; font-size: 12px; margin-top: 5px; display: block;">
-          Enter the exact amount you paid via UPI/Bank Transfer
-        </small>
+      <div id="creditControls" class="hub-section" style="margin: 0 0 14px;">
+        <div class="hub-section-title"><i class="fas fa-coins"></i> Store credits</div>
+        <label style="display:flex;align-items:center;gap:8px;color:#bbb;font-size:12px;"><input type="checkbox" id="useCreditsToggle"> Use credits for this checkout</label>
+        <div style="display:flex;gap:8px;margin-top:8px;"><input class="coupon-input" id="creditAmountInput" type="number" min="0" step="0.01" placeholder="Credit amount ($)" disabled><span id="creditBalanceLabel" style="color:#999;font-size:11px;align-self:center;"></span></div>
       </div>
-
-      <div class="input-group">
-        <label><i class="fas fa-receipt"></i> UTR ID / Transaction ID</label>
-        <input type="text" id="utrId" placeholder="Enter 10-16 character UTR ID" maxlength="16" required>
-        <small style="color: #999; font-size: 12px; margin-top: 5px; display: block;">
-          UTR ID is found in your payment confirmation message/screenshot
-        </small>
+      <div class="oxapay-payment-panel">
+        <div class="oxapay-payment-icon"><i class="fab fa-bitcoin"></i></div>
+        <div>
+          <strong>Pay securely with OxaPay</strong>
+          <p>Open the hosted payment page, complete your crypto payment, and return here. Your access is granted only after the payment is verified.</p>
+        </div>
       </div>
-      
+      <div id="paymentStatus" class="payment-status pending">
+        <i class="fas fa-info-circle"></i> Ready to create your secure payment link.
+      </div>
+      <div id="paymentSessionDetails" class="payment-session-details" style="display: none;"></div>
       <div class="btn-group">
-        <button class="btn btn-secondary" onclick="closeModal('paymentModal')">
-          <i class="fas fa-times"></i> Cancel
-        </button>
-        <button class="btn" onclick="confirmPurchase()">
-          <i class="fas fa-check"></i> Confirm Order
-        </button>
+        <button class="btn btn-secondary" onclick="closeModal('paymentModal')"><i class="fas fa-times"></i> Cancel</button>
+        <button class="btn" id="startPaymentBtn" onclick="startOxaPayCheckout()"><i class="fas fa-lock"></i> Open Secure Payment</button>
+      </div>
+      <p class="info-text"><i class="fas fa-sync-alt"></i> After returning from OxaPay, this page checks the verified status automatically. You can safely close this window while the payment is pending.</p>
+    </div>
+  </div>
+
+
+  <!-- Member Hub Modal -->
+  <div id="memberHubModal" class="modal">
+    <div class="modal-content" style="max-width: 920px;">
+      <span class="modal-close" onclick="closeModal('memberHubModal')">×</span>
+      <h2 class="modal-title"><i class="fas fa-layer-group"></i> Member Hub</h2>
+      <div id="memberHubContent">
+        <div class="loading-content" style="padding: 40px 0;"><div class="loading-spinner"></div><div class="loading-text">Loading your account...</div></div>
       </div>
     </div>
   </div>
@@ -2662,7 +2743,7 @@
     <div class="modal-content">
       <span class="modal-close" onclick="closeModal('authModal')">×</span>
       <h2 class="modal-title" id="authTitle"><i class="fas fa-sign-in-alt"></i> Login</h2>
-      
+
       <div id="loginForm">
         <div class="input-group">
           <label><i class="fas fa-envelope"></i> Email</label>
@@ -2708,7 +2789,7 @@
     <div class="modal-content">
       <span class="modal-close" onclick="closeModal('chatModal')">×</span>
       <h2 class="modal-title"><i class="fas fa-headset"></i> Admin Support</h2>
-      
+
       <div class="chat-container">
         <div class="chat-messages" id="chatMessages">
           <div class="chat-empty-state">
@@ -2812,7 +2893,7 @@
   <script type="module">
     import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js';
     import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js';
-    import { getDatabase, ref, set, get, push, onValue, remove, update, query, orderByChild, limitToLast } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-database.js';
+    import { getDatabase, ref, set, get, push, onValue, remove, update, query, orderByChild, limitToLast, runTransaction } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-database.js';
 
     const firebaseConfig = {
     apiKey: "AIzaSyBY19bfyTxQKV9qp_mGAPhJOVpUgy-v6R8",
@@ -2841,6 +2922,7 @@
     window.dbQuery = query;
     window.dbOrderByChild = orderByChild;
     window.dbLimitToLast = limitToLast;
+    window.dbRunTransaction = runTransaction;
     window.authCreateUser = createUserWithEmailAndPassword;
     window.authSignIn = signInWithEmailAndPassword;
     window.authSignOut = signOut;
@@ -2862,6 +2944,7 @@
       loadCartFromStorage();
       if (user) {
         loadChatMessages();
+        setTimeout(handlePaymentReturn, 350);
       }
     });
 
@@ -2923,7 +3006,7 @@
       const toast = document.getElementById('notificationToast');
       toast.textContent = message;
       toast.className = `notification-toast show ${type}`;
-      
+
       setTimeout(() => {
         toast.classList.remove('show');
       }, 3000);
@@ -2981,7 +3064,10 @@
             <i class="fas fa-shopping-bag"></i> Products
           </div>
           <div class="menu-item" onclick="showPurchaseHistory()">
-            <i class="fas fa-history"></i> Purchase History
+            <i class="fas fa-book-open"></i> Purchase Library
+          </div>
+          <div class="menu-item" onclick="showMemberHub()">
+            <i class="fas fa-layer-group"></i> Member Hub
           </div>
           <div class="menu-item" onclick="showBookmarks()">
             <i class="fas fa-bookmark"></i> Bookmarks
@@ -3039,6 +3125,196 @@
       });
     }
 
+    const paymentState = {
+      sessionId: null,
+      trackId: null,
+      paymentUrl: null,
+      pollingTimer: null,
+      creating: false
+    };
+
+    async function apiRequest(path, options = {}) {
+      if (!window.currentUser) throw new Error('Please login first');
+      const token = await window.currentUser.getIdToken();
+      const headers = { ...(options.headers || {}), Authorization: `Bearer ${token}` };
+      if (options.body && !headers['Content-Type']) headers['Content-Type'] = 'application/json';
+      const response = await fetch(path, { ...options, headers });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error || data.message || `Request failed (${response.status})`);
+      return data;
+    }
+
+    function setPaymentStatus(message, type = 'pending') {
+      const statusEl = document.getElementById('paymentStatus');
+      if (!statusEl) return;
+      const icons = { pending: 'fa-info-circle', success: 'fa-check-circle', error: 'fa-exclamation-circle' };
+      statusEl.className = `payment-status ${type}`;
+      statusEl.innerHTML = `<i class="fas ${icons[type] || icons.pending}"></i> ${escapeHtml(message)}`;
+    }
+
+    async function refreshCreditControls() {
+      const label = document.getElementById('creditBalanceLabel');
+      const input = document.getElementById('creditAmountInput');
+      if (!label || !input || !window.currentUser) return;
+      try {
+        const data = await apiRequest('/api/member/overview');
+        const balance = Number(data.storeCreditsCents || 0) / 100;
+        label.textContent = `Available: ${formatCurrency(balance)}`;
+        input.max = String(balance);
+      } catch (_) {
+        label.textContent = 'Credit balance unavailable';
+      }
+    }
+
+    async function redeemPointsFromHub() {
+      const input = document.getElementById('hubRedeemPointsInput');
+      const points = Number(input?.value || 0);
+      if (!points) return showNotification('Enter the number of points to redeem', 'error');
+      try {
+        const result = await apiRequest('/api/member/redeem-points', { method: 'POST', body: JSON.stringify({ points }) });
+        showNotification(`Converted ${points} points into ${formatCurrency(result.storeCreditsCents / 100)} in store credit`);
+        showMemberHub();
+      } catch (error) {
+        showNotification(error.message, 'error');
+      }
+    }
+
+    document.getElementById('useCreditsToggle')?.addEventListener('change', event => {
+      const input = document.getElementById('creditAmountInput');
+      if (input) input.disabled = !event.target.checked;
+      if (event.target.checked) refreshCreditControls();
+    });
+
+    function resetPaymentModal() {
+      if (paymentState.pollingTimer) clearInterval(paymentState.pollingTimer);
+      paymentState.sessionId = null;
+      paymentState.trackId = null;
+      paymentState.paymentUrl = null;
+      paymentState.creating = false;
+      document.getElementById('paymentSessionDetails').style.display = 'none';
+      document.getElementById('paymentSessionDetails').innerHTML = '';
+      const button = document.getElementById('startPaymentBtn');
+      button.disabled = false;
+      button.innerHTML = '<i class="fas fa-lock"></i> Create Secure Payment';
+      button.onclick = startOxaPayCheckout;
+      setPaymentStatus('Ready to create your secure payment link.');
+    }
+
+    function startPaymentPolling() {
+      if (paymentState.pollingTimer) clearInterval(paymentState.pollingTimer);
+      pollPaymentStatus();
+      paymentState.pollingTimer = setInterval(pollPaymentStatus, 7000);
+    }
+
+    async function pollPaymentStatus() {
+      if (!paymentState.sessionId || !window.currentUser) return;
+      try {
+        const session = await apiRequest(`/api/payments/${encodeURIComponent(paymentState.sessionId)}/verify`);
+        if (session.paymentStatus === 'amount_mismatch') {
+          if (paymentState.pollingTimer) clearInterval(paymentState.pollingTimer);
+          setPaymentStatus('The payment received was less than the exact discounted total. No files were unlocked. Please complete the remaining amount or create a new payment.', 'error');
+          return;
+        }
+        if (session.status === 'confirmed') {
+          if (paymentState.pollingTimer) clearInterval(paymentState.pollingTimer);
+          setPaymentStatus('Payment verified. Your purchase library has been updated.', 'success');
+          clearCart();
+          window.appliedCoupon = null;
+          showNotification('Payment verified — your tools are now in Purchase Library!', 'success');
+          setTimeout(() => {
+            closeModal('paymentModal');
+            showPurchaseHistory();
+          }, 900);
+        } else if (session.paymentStatus === 'failed' || session.status === 'failed') {
+          if (paymentState.pollingTimer) clearInterval(paymentState.pollingTimer);
+          setPaymentStatus('This payment session failed. No files were unlocked. Please start a new checkout.', 'error');
+        } else {
+          setPaymentStatus('Payment is still being confirmed on the network. This page will keep checking automatically.');
+        }
+      } catch (error) {
+        console.error('Payment status check failed:', error);
+        setPaymentStatus('We could not check the payment yet. We will retry automatically.', 'error');
+      }
+    }
+
+    async function startOxaPayCheckout() {
+      if (paymentState.creating || !window.currentUser || window.cart.length === 0) return;
+      paymentState.creating = true;
+      const button = document.getElementById('startPaymentBtn');
+      button.disabled = true;
+      button.innerHTML = '<span class="loading-spinner"></span> Creating payment...';
+      setPaymentStatus('Creating your secure OxaPay payment link...');
+      try {
+        const session = await apiRequest('/api/payments/create-invoice', {
+          method: 'POST',
+          body: JSON.stringify({
+            items: window.cart.map(item => ({ id: item.id })),
+            couponCode: window.appliedCoupon?.code || null,
+            useCredits: Boolean(document.getElementById('useCreditsToggle')?.checked),
+            creditAmount: Number(document.getElementById('creditAmountInput')?.value || 0)
+          })
+        });
+        paymentState.sessionId = session.sessionId;
+        paymentState.trackId = session.trackId;
+        paymentState.paymentUrl = session.paymentUrl;
+        document.getElementById('paymentAmount').textContent = formatCurrency(Number(session.amount || 0));
+        document.getElementById('paymentSessionDetails').innerHTML = `Exact amount due: <strong>${formatCurrency(Number(session.amount || 0))}</strong><br>Coupon deduction: <strong>-${formatCurrency(Number(session.discountAmount || 0))}</strong><br>Store credit: <strong>-${formatCurrency(Number(session.creditAmount || 0))}</strong><br>Payment reference: <strong>${escapeHtml(session.trackId)}</strong><br><span>Complete the hosted payment. Sending less than this exact amount will not unlock files.</span>`;
+        document.getElementById('paymentSessionDetails').style.display = 'block';
+        button.disabled = false;
+        button.innerHTML = '<i class="fas fa-external-link-alt"></i> Continue to OxaPay';
+        button.onclick = openOxaPayPayment;
+        setPaymentStatus('Payment link created. Complete the payment to unlock your tools.');
+        startPaymentPolling();
+      } catch (error) {
+        console.error('OxaPay checkout failed:', error);
+        setPaymentStatus(error.message || 'Could not create the payment link.', 'error');
+        button.disabled = false;
+        button.innerHTML = '<i class="fas fa-redo"></i> Try Again';
+      } finally {
+        paymentState.creating = false;
+      }
+    }
+
+    function openOxaPayPayment() {
+      if (!paymentState.paymentUrl) return;
+      window.location.href = paymentState.paymentUrl;
+    }
+
+    async function handlePaymentReturn() {
+      const sessionId = new URLSearchParams(window.location.search).get('session');
+      if (!sessionId || !window.currentUser) return;
+      paymentState.sessionId = sessionId;
+      document.getElementById('paymentModal').classList.add('active');
+      document.body.style.overflow = 'hidden';
+      setPaymentStatus('Checking your verified payment status...');
+      startPaymentPolling();
+      const cleanUrl = `${window.location.origin}${window.location.pathname}`;
+      window.history.replaceState({}, document.title, cleanUrl);
+    }
+
+    async function claimFreeProduct() {
+      if (!window.currentUser) {
+        closeModal('productModal');
+        requireLogin('download free products');
+        return;
+      }
+      if (!window.currentProduct) return;
+      try {
+        showLoading('Saving to your purchase library...');
+        await apiRequest('/api/library/claim-free', {
+          method: 'POST',
+          body: JSON.stringify({ productId: window.currentProduct.id })
+        });
+        hideLoading();
+        closeModal('productModal');
+        showNotification('Free tool saved to your Purchase Library!', 'success');
+        setTimeout(showPurchaseHistory, 600);
+      } catch (error) {
+        hideLoading();
+        showNotification(error.message || 'Could not save the free tool', 'error');
+      }
+    }
+
     // Calculate discount percentage
     function calculateDiscountPercent(original, discounted) {
       const discount = ((original - discounted) / original) * 100;
@@ -3052,13 +3328,13 @@
           showLoading('Loading products...');
           const snapshot = await window.dbGet(window.dbRef(window.db, 'products'));
           hideLoading();
-          
+
           if (snapshot.exists()) {
             window.allProducts = Object.entries(snapshot.val()).map(([id, product]) => ({
               id,
               ...product
             })).sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
-            
+
             displayProducts(window.allProducts);
           } else {
             displayEmptyState('products');
@@ -3106,7 +3382,7 @@ function createProductCard(product, index) {
   const card = document.createElement('div');
   card.className = 'product-card';
   card.style.animationDelay = `${index * 0.1}s`;
-  
+
   const discountPercent = calculateDiscountPercent(product.realPrice, product.discountedPrice);
   const showBadge = discountPercent >= 10;
   const isFree = parseFloat(product.discountedPrice) === 0;
@@ -3114,7 +3390,7 @@ function createProductCard(product, index) {
   card.innerHTML = `
     ${showBadge && !isFree ? `<div class="product-badge">${discountPercent}% OFF</div>` : ''}
     ${isFree ? `<div class="product-badge" style="background: linear-gradient(135deg, #00ff88, #00ffff);">FREE</div>` : ''}
-    <img src="${escapeHtml(product.imageUrl)}" alt="${escapeHtml(product.title)}" class="product-image" 
+    <img src="${escapeHtml(product.imageUrl)}" alt="${escapeHtml(product.title)}" class="product-image"
          onerror="this.src='https://via.placeholder.com/300x180/1a0a2e/00ffff?text=No+Image'" loading="lazy">
     <div class="product-title">${escapeHtml(product.title)}</div>
     <div class="product-description">${escapeHtml(product.description || '')}</div>
@@ -3149,7 +3425,7 @@ function createProductCard(product, index) {
         showLoading('Loading product...');
         const snapshot = await window.dbGet(window.dbRef(window.db, `products/${productId}`));
         hideLoading();
-        
+
         if (snapshot.exists()) {
           window.currentProduct = { id: productId, ...snapshot.val() };
           const product = window.currentProduct;
@@ -3157,16 +3433,16 @@ function createProductCard(product, index) {
           document.getElementById('modalImage').src = product.imageUrl;
           document.getElementById('modalTitle').textContent = product.title;
           document.getElementById('modalDescription').textContent = product.description;
-          
+
           const isFree = parseFloat(product.discountedPrice) === 0;
-          
+
           if (!isFree) {
             document.getElementById('modalPriceOriginal').textContent = formatCurrency(product.realPrice);
             document.getElementById('modalPriceOriginal').style.display = 'inline';
           } else {
             document.getElementById('modalPriceOriginal').style.display = 'none';
           }
-          
+
           document.getElementById('modalPriceDiscount').textContent = isFree ? 'FREE' : formatCurrency(product.discountedPrice);
 
           const discountPercent = calculateDiscountPercent(product.realPrice, product.discountedPrice);
@@ -3181,7 +3457,7 @@ function createProductCard(product, index) {
           // Display screenshots if available
           const screenshotsSection = document.getElementById('screenshotsSection');
           const screenshotsGrid = document.getElementById('screenshotsGrid');
-          
+
           if (product.screenshots && product.screenshots.length > 0) {
             screenshotsGrid.innerHTML = '';
             product.screenshots.forEach((screenshot, idx) => {
@@ -3205,7 +3481,7 @@ function createProductCard(product, index) {
 
           if (isFree) {
             buttonGroup.innerHTML = `
-              <button class="btn btn-free-download btn-full" onclick="window.open('${escapeHtml(product.downloadLink || '#')}', '_blank')">
+              <button class="btn btn-free-download btn-full" onclick="claimFreeProduct()">
                 <i class="fas fa-download"></i> Free Download
               </button>
               <button class="btn-icon" id="bookmarkBtn" onclick="toggleBookmark()" title="Bookmark">
@@ -3226,8 +3502,9 @@ function createProductCard(product, index) {
             `;
           }
 
-          // Update bookmark button
+          // Update bookmark button and load the verified customer insights panel.
           await updateBookmarkButton();
+          await loadProductInsights(product.id);
 
           document.getElementById('productModal').classList.add('active');
           document.body.style.overflow = 'hidden';
@@ -3256,7 +3533,7 @@ function createProductCard(product, index) {
 
       try {
         const snapshot = await window.dbGet(
-          window.dbRef(window.db, `users/${window.currentUser.uid}/bookmarks/${window.currentProduct.id}`)
+          window.dbRef(window.db, `users/${window.currentUser.uid}/wishlist/${window.currentProduct.id}`)
         );
         
         if (snapshot.exists()) {
@@ -3283,42 +3560,28 @@ function createProductCard(product, index) {
       if (!window.currentProduct) return;
 
       try {
-        const bookmarkRef = window.dbRef(
-          window.db,
-          `users/${window.currentUser.uid}/bookmarks/${window.currentProduct.id}`
-        );
-        
-        const snapshot = await window.dbGet(bookmarkRef);
+        const result = await apiRequest('/api/member/wishlist/toggle', {
+          method: 'POST',
+          body: JSON.stringify({ productId: window.currentProduct.id })
+        });
         const btn = document.getElementById('bookmarkBtn');
-        
-        if (snapshot.exists()) {
-          await window.dbRemove(bookmarkRef);
-          btn.querySelector('i').className = 'far fa-bookmark';
-          btn.classList.remove('active');
-          showNotification('Removed from bookmarks', 'success');
-        } else {
-          await window.dbSet(bookmarkRef, {
-            productId: window.currentProduct.id,
-            addedAt: new Date().toISOString()
-          });
-          btn.querySelector('i').className = 'fas fa-bookmark';
-          btn.classList.add('active');
-          showNotification('Added to bookmarks', 'success');
-        }
+        btn.querySelector('i').className = result.saved ? 'fas fa-bookmark' : 'far fa-bookmark';
+        btn.classList.toggle('active', result.saved);
+        showNotification(result.saved ? 'Added to wishlist' : 'Removed from wishlist', 'success');
       } catch (error) {
-        console.error('Error toggling bookmark:', error);
-        showNotification('Failed to update bookmark', 'error');
+        console.error('Error toggling wishlist:', error);
+        showNotification(error.message || 'Failed to update wishlist', 'error');
       }
     }
 
     // Search products
     function searchProducts() {
       const query = document.getElementById('searchBar').value.toLowerCase().trim();
-      
+
       let filtered = window.allProducts;
 
       if (query) {
-        filtered = window.allProducts.filter(product => 
+        filtered = window.allProducts.filter(product =>
           product.title.toLowerCase().includes(query) ||
           (product.description && product.description.toLowerCase().includes(query))
         );
@@ -3340,7 +3603,7 @@ function createProductCard(product, index) {
     // Filter products
     function filterProducts(filter) {
       window.currentFilter = filter;
-      
+
       // Update active button
       document.querySelectorAll('.filter-btn').forEach(btn => {
         btn.classList.remove('active');
@@ -3371,7 +3634,7 @@ function applyFilter(products, filter) {
         const discountPercent = realPrice > 0 ? ((realPrice - discountedPrice) / realPrice) * 100 : 0;
         return discountPercent < 70;
       });
-    
+
     case 'budget':
       // Budget Friendly: 70% discount or more (excludes free products)
       return products.filter(p => {
@@ -3381,14 +3644,14 @@ function applyFilter(products, filter) {
         const discountPercent = ((realPrice - discountedPrice) / realPrice) * 100;
         return discountPercent >= 70;
       });
-    
+
     case 'free':
       // Free Products: Price is 0
       return products.filter(p => {
         const price = parseFloat(p.discountedPrice);
         return price === 0;
       });
-    
+
     default:
       // All Products
       return products;
@@ -3464,7 +3727,7 @@ function applyFilter(products, filter) {
       let filtered = window.allProducts;
 
       if (query) {
-        filtered = filtered.filter(product => 
+        filtered = filtered.filter(product =>
           product.title.toLowerCase().includes(query) ||
           (product.description && product.description.toLowerCase().includes(query))
         );
@@ -3530,7 +3793,7 @@ function applyFilter(products, filter) {
 
       window.cart.forEach((item, index) => {
         total += parseFloat(item.price);
-        
+
         const cartItem = document.createElement('div');
         cartItem.className = 'cart-item';
         cartItem.innerHTML = `
@@ -3553,10 +3816,10 @@ function applyFilter(products, filter) {
     function toggleCart() {
       const cartSidebar = document.getElementById('cartSidebar');
       const overlay = document.getElementById('sidebarOverlay');
-      
+
       cartSidebar.classList.toggle('active');
       overlay.classList.toggle('active');
-      
+
       if (cartSidebar.classList.contains('active')) {
         document.body.style.overflow = 'hidden';
       } else {
@@ -3578,9 +3841,9 @@ function applyFilter(products, filter) {
       window.cart.push(cartItem);
       saveCartToStorage();
       updateCartUI();
-      
+
       showNotification(`${product.title} added to cart!`, 'success');
-      
+
       // Close modal and open cart
       closeModal('productModal');
       setTimeout(() => {
@@ -3591,7 +3854,7 @@ function applyFilter(products, filter) {
     async function quickAddToCart(productId) {
       try {
         const snapshot = await window.dbGet(window.dbRef(window.db, `products/${productId}`));
-        
+
         if (snapshot.exists()) {
           const product = snapshot.val();
           const cartItem = {
@@ -3604,7 +3867,7 @@ function applyFilter(products, filter) {
           window.cart.push(cartItem);
           saveCartToStorage();
           updateCartUI();
-          
+
           showNotification(`${product.title} added to cart!`, 'success');
         }
       } catch (error) {
@@ -3615,7 +3878,7 @@ function applyFilter(products, filter) {
 
     function removeFromCart(index) {
       const removedItem = window.cart[index];
-      
+
       showConfirmDialog(
         'Remove from Cart',
         `Are you sure you want to remove "${removedItem.title}" from cart?`,
@@ -3647,12 +3910,12 @@ function applyFilter(products, filter) {
         price: window.currentProduct.discountedPrice,
         image: window.currentProduct.imageUrl
       }];
-      
+
       saveCartToStorage();
       updateCartUI();
-      
+
       closeModal('productModal');
-      
+
       setTimeout(() => {
         checkoutCart();
       }, 300);
@@ -3713,7 +3976,7 @@ function applyFilter(products, filter) {
     // Coupon functions
     async function applyCoupon() {
       const couponCode = document.getElementById('couponInput').value.trim().toUpperCase();
-      
+
       if (!couponCode) {
         showCouponMessage('Please enter a coupon code', 'error');
         return;
@@ -3721,10 +3984,10 @@ function applyFilter(products, filter) {
 
       try {
         showLoading('Validating coupon...');
-        
+
         const couponsSnapshot = await window.dbGet(window.dbRef(window.db, 'coupons'));
         hideLoading();
-        
+
         if (!couponsSnapshot.exists()) {
           showCouponMessage('Invalid coupon code', 'error');
           return;
@@ -3735,7 +3998,7 @@ function applyFilter(products, filter) {
         let couponId = null;
 
         for (const [id, coupon] of Object.entries(coupons)) {
-          if (coupon.code === couponCode) {
+          if (String(coupon.code || '').toUpperCase() === couponCode) {
             foundCoupon = coupon;
             couponId = id;
             break;
@@ -3760,7 +4023,7 @@ function applyFilter(products, filter) {
           return;
         }
 
-        if (foundCoupon.usageLimit > 0 && (foundCoupon.usedCount || 0) >= foundCoupon.usageLimit) {
+        if (foundCoupon.usageLimit > 0 && ((foundCoupon.usedCount || 0) + (foundCoupon.reservedCount || 0)) >= foundCoupon.usageLimit) {
           showCouponMessage('This coupon has reached its usage limit', 'error');
           return;
         }
@@ -3777,13 +4040,14 @@ function applyFilter(products, filter) {
 
         if (foundCoupon.discountType === 'percentage') {
           discountAmount = (subtotal * foundCoupon.discountValue) / 100;
-          
+
           if (foundCoupon.maxDiscount > 0 && discountAmount > foundCoupon.maxDiscount) {
             discountAmount = foundCoupon.maxDiscount;
           }
         } else {
-          discountAmount = foundCoupon.discountValue;
+          discountAmount = Math.min(foundCoupon.discountValue, subtotal);
         }
+        discountAmount = Math.max(0, Math.min(discountAmount, subtotal));
 
         // Apply coupon
         window.appliedCoupon = {
@@ -3793,15 +4057,15 @@ function applyFilter(products, filter) {
         };
 
         updateCheckoutTotals();
-        
+
         // Show applied coupon
         document.getElementById('couponInputSection').style.display = 'none';
         document.getElementById('appliedCouponDisplay').innerHTML = `
           <div class="applied-coupon">
             <div>
-              <i class="fas fa-ticket-alt"></i> 
+              <i class="fas fa-ticket-alt"></i>
               <span class="applied-coupon-code">${foundCoupon.code}</span>
-              <span style="color: #00ff88; margin-left: 10px;">+${formatCurrency(discountAmount)}</span>
+              <span style="color: #00ff88; margin-left: 10px;">-${formatCurrency(discountAmount)}</span>
             </div>
             <div class="applied-coupon-remove" onclick="removeCoupon()">
               <i class="fas fa-times"></i>
@@ -3833,7 +4097,7 @@ function applyFilter(products, filter) {
       messageDiv.textContent = message;
       messageDiv.className = `coupon-message ${type}`;
       messageDiv.style.display = 'block';
-      
+
       setTimeout(() => {
         messageDiv.style.display = 'none';
       }, 3000);
@@ -3845,9 +4109,9 @@ function applyFilter(products, filter) {
 
       if (window.appliedCoupon) {
         document.getElementById('discountRow').style.display = 'flex';
-        document.getElementById('checkoutDiscount').textContent = `+${formatCurrency(window.appliedCoupon.discount)}`;
-        
-        const total = subtotal + window.appliedCoupon.discount;
+        document.getElementById('checkoutDiscount').textContent = `-${formatCurrency(window.appliedCoupon.discount)}`;
+
+        const total = Math.max(0, subtotal - window.appliedCoupon.discount);
         document.getElementById('checkoutTotal').textContent = formatCurrency(total);
       } else {
         document.getElementById('discountRow').style.display = 'none';
@@ -3855,152 +4119,37 @@ function applyFilter(products, filter) {
       }
     }
 
-    // Proceed to payment
+    // Proceed to gateway payment
     function proceedToPayment() {
       if (window.cart.length === 0) {
         showNotification('Cart is empty', 'error');
         return;
       }
-
-      // Calculate total
       const subtotal = window.cart.reduce((sum, item) => sum + parseFloat(item.price), 0);
       const discount = window.appliedCoupon ? window.appliedCoupon.discount : 0;
-      const total = subtotal + discount;
-
+      const total = Math.max(0, subtotal - discount);
+      if (total <= 0) {
+        showNotification('This order is free after the coupon. Please remove the coupon and claim the free tools separately.', 'error');
+        return;
+      }
       document.getElementById('paymentAmount').textContent = formatCurrency(total);
-
+      const creditToggle = document.getElementById('useCreditsToggle');
+      const creditInput = document.getElementById('creditAmountInput');
+      if (creditToggle) creditToggle.checked = false;
+      if (creditInput) { creditInput.value = ''; creditInput.disabled = true; }
+      refreshCreditControls();
+      resetPaymentModal();
       closeModal('checkoutModal');
-      
       setTimeout(() => {
         document.getElementById('paymentModal').classList.add('active');
         document.body.style.overflow = 'hidden';
       }, 300);
     }
 
-    // Confirm purchase
-    async function confirmPurchase() {
-      const userAmount = document.getElementById('userAmount').value.trim();
-      const utrId = document.getElementById('utrId').value.trim();
-
-      // Validation
-      if (!userAmount) {
-        showNotification('Please enter the amount you paid', 'error');
-        return;
-      }
-
-      if (!utrId) {
-        showNotification('Please enter UTR ID', 'error');
-        return;
-      }
-
-      const amountPaid = parseFloat(userAmount);
-      if (isNaN(amountPaid) || amountPaid <= 0) {
-        showNotification('Please enter a valid amount', 'error');
-        return;
-      }
-
-      if (utrId.length < 10 || utrId.length > 16) {
-        showNotification('UTR ID must be between 10 and 16 characters', 'error');
-        return;
-      }
-
-      if (!/^[a-zA-Z0-9]+$/.test(utrId)) {
-        showNotification('UTR ID must contain only letters and numbers', 'error');
-        return;
-      }
-
-      try {
-        showLoading('Processing your order...');
-
-        // Calculate totals
-        const subtotal = window.cart.reduce((sum, item) => sum + parseFloat(item.price), 0);
-        const discount = window.appliedCoupon ? window.appliedCoupon.discount : 0;
-        const total = subtotal + discount;
-
-        // Create orders for each product in cart
-        for (const item of window.cart) {
-          const orderRef = window.dbPush(window.dbRef(window.db, 'orders'));
-          const orderId = orderRef.key;
-
-          const orderData = {
-            productId: item.id,
-            amountPaid: amountPaid,
-            productSnapshot: {
-              title: item.title,
-              imageUrl: item.image,
-              discountedPrice: item.price
-            },
-            userInput: { 
-              utrId,
-              name: window.currentUser.displayName || 'N/A',
-              email: window.currentUser.email,
-              phone: 'N/A'
-            },
-            userId: window.currentUser.uid,
-            userEmail: window.currentUser.email,
-            couponUsed: window.appliedCoupon ? window.appliedCoupon.code : null,
-            discountAmount: window.appliedCoupon ? window.appliedCoupon.discount : 0,
-            finalAmount: total,
-            status: 'pending',
-            createdAt: new Date().toISOString()
-          };
-
-          await window.dbSet(orderRef, orderData);
-          
-          // Add to user's purchases
-          await window.dbSet(
-            window.dbRef(window.db, `users/${window.currentUser.uid}/purchases/${orderId}`),
-            {
-              orderId: orderId,
-              productId: item.id,
-              purchasedAt: new Date().toISOString()
-            }
-          );
-        }
-
-        // Update coupon usage if applied
-        if (window.appliedCoupon) {
-          const couponRef = window.dbRef(window.db, `coupons/${window.appliedCoupon.id}`);
-          const couponSnapshot = await window.dbGet(couponRef);
-          
-          if (couponSnapshot.exists()) {
-            const currentUsage = couponSnapshot.val().usedCount || 0;
-            await window.dbUpdate(couponRef, {
-              usedCount: currentUsage + 1
-            });
-          }
-        }
-
-        hideLoading();
-
-        // Clear cart
-        clearCart();
-        window.appliedCoupon = null;
-
-        // Clear form
-        document.getElementById('userAmount').value = '';
-        document.getElementById('utrId').value = '';
-
-        closeModal('paymentModal');
-        
-        showNotification('🎉 Order placed successfully! Check your purchase history.', 'success');
-
-        // Show success animation
-        setTimeout(() => {
-          showPurchaseHistory();
-        }, 1500);
-
-      } catch (error) {
-        hideLoading();
-        console.error('Error placing order:', error);
-        showNotification('Failed to place order: ' + error.message, 'error');
-      }
-    }
-
     // Show products page
     function showProducts() {
       toggleMenu();
-      
+
       document.getElementById('mainContent').innerHTML = `
   <div class="filter-slider-container" id="filterSliderContainer">
     <div class="filter-slider" id="filterSlider">
@@ -4026,8 +4175,140 @@ function applyFilter(products, filter) {
       window.currentFilter = 'all';
       currentPage = 1;
       loadProducts();
-      
+
       document.getElementById('searchBar').value = '';
+    }
+
+    // ===== Member Hub, verified reviews, wishlist, alerts, and referrals =====
+    async function showMemberHub() {
+      if (!window.currentUser) {
+        requireLogin('open your member hub');
+        return;
+      }
+      toggleMenu();
+      document.getElementById('memberHubModal').classList.add('active');
+      document.body.style.overflow = 'hidden';
+      document.getElementById('memberHubContent').innerHTML = '<div style="padding: 40px; text-align: center; color: #aaa;"><i class="fas fa-spinner fa-spin"></i> Loading your account...</div>';
+      try {
+        const data = await apiRequest('/api/member/overview');
+        renderMemberHub(data);
+      } catch (error) {
+        document.getElementById('memberHubContent').innerHTML = `<div class="empty-state"><div class="empty-state-title">Could not load your member hub</div><div class="empty-state-text">${escapeHtml(error.message)}</div></div>`;
+      }
+    }
+
+    function renderMemberHub(data) {
+        const rewards = data.rewards || {};
+      const storeCredits = Number(data.storeCreditsCents || 0) / 100;
+      const game = data.game || {};
+      const referrals = data.referrals || [];
+      const notifications = data.notifications || [];
+      const downloads = data.downloads || [];
+      const wishlist = data.wishlist || [];
+      const alerts = data.priceAlerts || [];
+      const achievements = data.achievements || {};
+      const lastPlayed = Number(game.lastPlayed || 0);
+      const playText = lastPlayed && Date.now() - lastPlayed < 86400000 ? 'Played today' : 'Game available';
+      const wishlistTitles = wishlist.map(item => {
+        const product = window.allProducts.find(candidate => candidate.id === item.productId);
+        return product ? `<span class="hub-pill">${escapeHtml(product.title)}</span>` : '';
+      }).join('') || '<span style="color:#999;">No saved products yet.</span>';
+      const alertRows = alerts.map(alert => {
+        const product = window.allProducts.find(candidate => candidate.id === alert.productId);
+        return `<div class="hub-list-row"><span>${escapeHtml(product?.title || alert.productId)}</span><strong>Alert at ${formatCurrency(alert.targetPrice)}</strong></div>`;
+      }).join('') || '<div class="hub-muted">No price alerts set.</div>';
+      const notificationRows = notifications.slice(0, 5).map(note => `<div class="hub-list-row"><span>${escapeHtml(note.title || 'Store update')}</span><small>${escapeHtml(note.message || '')}</small></div>`).join('') || '<div class="hub-muted">You are all caught up.</div>';
+      const downloadRows = downloads.slice(0, 5).map(download => `<div class="hub-list-row"><span>${escapeHtml(download.productTitle || download.productId || 'Purchase')}</span><small>${new Date(download.downloadedAt || Date.now()).toLocaleString()}</small></div>`).join('') || '<div class="hub-muted">No download activity yet.</div>';
+      const achievementRows = Object.values(achievements).map(item => `<span class="hub-pill"><i class="fas fa-medal"></i> ${escapeHtml(item.title || 'Achievement')}</span>`).join('') || '<span class="hub-muted">Play and shop to unlock achievements.</span>';
+      document.getElementById('memberHubContent').innerHTML = `
+        <div class="hub-hero">
+          <div><div class="hub-eyebrow">Welcome back</div><h3>${escapeHtml(data.profile?.displayName || 'Customer')}</h3><p>${escapeHtml(data.profile?.email || '')}</p></div>
+          <div class="hub-points"><strong>${Number(rewards.points || 0)}</strong><span>Reward points</span></div>
+        </div>
+        <div class="hub-grid">
+          <div class="hub-card"><div class="hub-card-title"><i class="fas fa-book-open"></i> Library</div><strong>${(data.purchases || []).length}</strong><span>confirmed tools</span><button class="btn btn-small" onclick="closeModal('memberHubModal'); showPurchaseHistory();">Open library</button></div>
+          <div class="hub-card"><div class="hub-card-title"><i class="fas fa-gamepad"></i> Daily games</div><strong>${escapeHtml(playText)}</strong><span>Spin or scratch once a day</span><button class="btn btn-small" onclick="closeModal('memberHubModal'); openGamesModal();">Play now</button></div>
+          <div class="hub-card"><div class="hub-card-title"><i class="fas fa-heart"></i> Wishlist</div><strong>${wishlist.length}</strong><span>saved products</span><button class="btn btn-small" onclick="closeModal('memberHubModal'); showBookmarks();">View wishlist</button></div>
+          <div class="hub-card"><div class="hub-card-title"><i class="fas fa-user-friends"></i> Referrals</div><strong>${referrals.length}</strong><span>invited customers</span><button class="btn btn-small" onclick="copyReferralCode('${escapeHtml(data.profile?.referralCode || '')}')">Copy code</button></div>
+          <div class="hub-card"><div class="hub-card-title"><i class="fas fa-coins"></i> Store credits</div><strong>${formatCurrency(storeCredits)}</strong><span>available balance</span><button class="btn btn-small" onclick="document.getElementById('hubRedeemPointsInput').focus()">Redeem points</button></div>
+        </div>
+        <div class="hub-section"><div class="hub-section-title"><i class="fas fa-coins"></i> Redeem reward points</div><div class="hub-referral-row"><input id="hubRedeemPointsInput" class="coupon-input" type="number" min="100" step="100" placeholder="Points, minimum 100"><button class="btn btn-small" onclick="redeemPointsFromHub()">Convert</button></div><div class="hub-muted" style="margin-top:8px;">Every 100 points becomes $1.00 in store credit.</div></div>
+        <div class="hub-section"><div class="hub-section-title"><i class="fas fa-gift"></i> Referral code</div><div class="hub-referral-row"><code id="hubReferralCode">${escapeHtml(data.profile?.referralCode || 'Generating...')}</code><button class="btn btn-small" onclick="copyReferralCode(document.getElementById('hubReferralCode').textContent)"><i class="fas fa-copy"></i> Copy</button></div><div class="hub-referral-row"><input id="hubReferralInput" class="coupon-input" placeholder="Have a referral code?"><button class="btn btn-small" onclick="applyReferralFromHub()">Apply</button></div></div>
+        <div class="hub-section"><div class="hub-section-title"><i class="fas fa-bell"></i> Price alerts</div>${alertRows}</div>
+        <div class="hub-section"><div class="hub-section-title"><i class="fas fa-medal"></i> Achievements</div><div class="hub-pills">${achievementRows}</div></div>
+        <div class="hub-section"><div class="hub-section-title"><i class="fas fa-download"></i> Recent downloads</div>${downloadRows}</div>
+        <div class="hub-section"><div class="hub-section-title"><i class="fas fa-broadcast-tower"></i> Notifications</div>${notificationRows}</div>
+        <div class="hub-section"><div class="hub-section-title"><i class="fas fa-heart"></i> Wishlist preview</div><div class="hub-pills">${wishlistTitles}</div></div>
+      `;
+    }
+
+    function copyReferralCode(code) {
+      if (!code) return;
+      navigator.clipboard?.writeText(code).then(() => showNotification('Referral code copied')).catch(() => showNotification('Copy failed — select the code manually', 'error'));
+    }
+
+    async function applyReferralFromHub() {
+      const code = document.getElementById('hubReferralInput')?.value.trim();
+      if (!code) return showNotification('Enter a referral code first', 'error');
+      try {
+        await apiRequest('/api/member/referral-code', { method: 'POST', body: JSON.stringify({ code }) });
+        showNotification('Referral code applied successfully');
+        showMemberHub();
+      } catch (error) {
+        showNotification(error.message, 'error');
+      }
+    }
+
+    async function toggleWishlistFromProduct(productId) {
+      try {
+        const result = await apiRequest('/api/member/wishlist/toggle', { method: 'POST', body: JSON.stringify({ productId }) });
+        showNotification(result.saved ? 'Added to wishlist' : 'Removed from wishlist');
+        await loadProductInsights(productId);
+      } catch (error) {
+        showNotification(error.message, 'error');
+      }
+    }
+
+    async function createPriceAlertFromProduct(productId, currentPrice) {
+      if (!window.currentUser) return requireLogin('set a price alert');
+      const rawTarget = window.prompt(`Notify me when this product reaches what price? Current price: ${formatCurrency(currentPrice)}`, String(currentPrice));
+      if (rawTarget === null) return;
+      try {
+        await apiRequest('/api/member/price-alert', { method: 'POST', body: JSON.stringify({ productId, targetPrice: Number(rawTarget) }) });
+        showNotification('Price alert saved');
+      } catch (error) {
+        showNotification(error.message, 'error');
+      }
+    }
+
+    async function submitReviewFromProduct(productId) {
+      if (!window.currentUser) return requireLogin('review a product');
+      const rating = Number(window.prompt('Rating from 1 to 5 stars:', '5'));
+      const comment = window.prompt('Write your review:');
+      if (!Number.isInteger(rating) || rating < 1 || rating > 5 || comment === null) return;
+      try {
+        await apiRequest(`/api/products/${encodeURIComponent(productId)}/reviews`, { method: 'POST', body: JSON.stringify({ productId, rating, comment }) });
+        showNotification('Verified review saved');
+        await loadProductInsights(productId);
+      } catch (error) {
+        showNotification(error.message, 'error');
+      }
+    }
+
+    async function loadProductInsights(productId) {
+      const target = document.getElementById('productInsights');
+      if (!target) return;
+      target.innerHTML = '<div style="color:#999; font-size:12px;"><i class="fas fa-spinner fa-spin"></i> Loading customer insights...</div>';
+      try {
+        const response = await fetch(`/api/products/${encodeURIComponent(productId)}/reviews`);
+        const reviewData = await response.json();
+        const product = window.allProducts.find(item => item.id === productId) || window.currentProduct || {};
+        const isWishlisted = window.currentUser && (await window.dbGet(window.dbRef(window.db, `users/${window.currentUser.uid}/wishlist/${productId}`))).exists();
+        const reviews = (reviewData.reviews || []).slice(0, 3).map(review => `<div class="review-row"><div><strong>${escapeHtml(review.displayName)}</strong> <span class="review-stars">${'★'.repeat(review.rating)}${'☆'.repeat(5 - review.rating)}</span></div><p>${escapeHtml(review.comment)}</p></div>`).join('') || '<div class="hub-muted">No reviews yet. Verified purchasers can be first.</div>';
+        target.innerHTML = `<div class="product-insights"><div class="insight-summary"><strong>${reviewData.averageRating || '—'}</strong><span class="review-stars">${reviewData.reviewCount ? '★'.repeat(Math.round(reviewData.averageRating)) : '☆☆☆☆☆'}</span><small>${reviewData.reviewCount || 0} verified review(s)</small></div><div class="insight-actions"><button class="btn btn-small" onclick="toggleWishlistFromProduct('${productId}')"><i class="fas fa-heart"></i> ${isWishlisted ? 'Remove wishlist' : 'Add wishlist'}</button><button class="btn btn-small btn-secondary" onclick="createPriceAlertFromProduct('${productId}', ${Number(product.discountedPrice || 0)})"><i class="fas fa-bell"></i> Price alert</button><button class="btn btn-small btn-secondary" onclick="submitReviewFromProduct('${productId}')"><i class="fas fa-star"></i> Write review</button></div><div class="review-list">${reviews}</div></div>`;
+      } catch (error) {
+        target.innerHTML = '<div class="hub-muted">Customer insights are temporarily unavailable.</div>';
+      }
     }
 
     // Show bookmarks
@@ -4038,13 +4319,13 @@ function applyFilter(products, filter) {
       }
 
       toggleMenu();
-      
+
       try {
         showLoading('Loading bookmarks...');
-        
-        const snapshot = await window.dbGet(
-          window.dbRef(window.db, `users/${window.currentUser.uid}/bookmarks`)
-        );
+
+        const memberData = await apiRequest('/api/member/overview');
+        const wishlistItems = memberData.wishlist || [];
+        const bookmarkIds = wishlistItems.map(item => item.productId).filter(Boolean);
         
         hideLoading();
 
@@ -4055,11 +4336,8 @@ function applyFilter(products, filter) {
 
         const grid = document.getElementById('bookmarksGrid');
 
-        if (snapshot.exists()) {
-          const bookmarks = snapshot.val();
-          const bookmarkIds = Object.keys(bookmarks);
-          
-          // Load each bookmarked product
+        if (bookmarkIds.length) {
+          // Load each wishlisted product
           const bookmarkedProducts = [];
           for (const productId of bookmarkIds) {
             const productSnapshot = await window.dbGet(
@@ -4072,7 +4350,7 @@ function applyFilter(products, filter) {
               });
             }
           }
-          
+
           if (bookmarkedProducts.length > 0) {
             bookmarkedProducts.forEach((product, index) => {
               const card = createProductCard(product, index);
@@ -4111,7 +4389,7 @@ function applyFilter(products, filter) {
         hideLoading();
 
         document.getElementById('mainContent').innerHTML = `
-          <h2 class="section-title"><i class="fas fa-history"></i> Purchase History</h2>
+          <h2 class="section-title"><i class="fas fa-book-open"></i> Purchase Library</h2>
           <div id="purchasesList"></div>
         `;
 
@@ -4120,26 +4398,26 @@ function applyFilter(products, filter) {
         if (snapshot.exists()) {
           const purchases = Object.values(snapshot.val())
             .sort((a, b) => new Date(b.purchasedAt) - new Date(a.purchasedAt));
-          
+
           // Load order details for each purchase
           for (const purchase of purchases) {
             const orderSnapshot = await window.dbGet(
               window.dbRef(window.db, `orders/${purchase.orderId}`)
             );
-            
+
             if (orderSnapshot.exists()) {
               const order = orderSnapshot.val();
-              
-              // Load product details to get download link
+
+              // Load product details to get download link; retain the order snapshot if a product was removed.
               const productSnapshot = await window.dbGet(
                 window.dbRef(window.db, `products/${purchase.productId}`)
               );
-              
-              let downloadLink = null;
+
+              let downloadLink = order.productSnapshot?.downloadLink || null;
               if (productSnapshot.exists()) {
-                downloadLink = productSnapshot.val().downloadLink || null;
+                downloadLink = productSnapshot.val().downloadLink || downloadLink;
               }
-              
+
               const card = createOrderCard(purchase.orderId, order, downloadLink);
               list.appendChild(card);
             }
@@ -4155,11 +4433,50 @@ function applyFilter(products, filter) {
       }
     }
 
+    async function downloadOwnedFile(orderId, button) {
+      if (!window.currentUser) {
+        requireLogin('download your purchase');
+        return;
+      }
+      const originalLabel = button?.innerHTML || '';
+      try {
+        if (button) {
+          button.disabled = true;
+          button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Preparing download...';
+        }
+        const token = await window.currentUser.getIdToken();
+        const response = await fetch(`/api/library/download/${encodeURIComponent(orderId)}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (!response.ok) {
+          const data = await response.json().catch(() => ({}));
+          throw new Error(data.error || 'Download is available only after payment verification');
+        }
+        const blob = await response.blob();
+        const url = URL.createObjectURL(blob);
+        const anchor = document.createElement('a');
+        anchor.href = url;
+        anchor.download = `${orderId}.download`;
+        document.body.appendChild(anchor);
+        anchor.click();
+        anchor.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 30000);
+        showNotification('Download started.', 'success');
+      } catch (error) {
+        showNotification(error.message || 'Could not start the download', 'error');
+      } finally {
+        if (button) {
+          button.disabled = false;
+          button.innerHTML = originalLabel;
+        }
+      }
+    }
+
     // Create order card with download button
     function createOrderCard(orderId, order, downloadLink) {
       const card = document.createElement('div');
       card.className = 'order-card';
-      
+
       const date = new Date(order.createdAt).toLocaleDateString('en-IN', {
         year: 'numeric',
         month: 'short',
@@ -4184,28 +4501,28 @@ function applyFilter(products, filter) {
           <div class="order-status ${statusClass}">${statusText}</div>
         </div>
         <div class="order-body">
-          <img src="${escapeHtml(order.productSnapshot?.imageUrl || '')}" 
-               alt="${escapeHtml(order.productSnapshot?.title || 'Product')}" 
+          <img src="${escapeHtml(order.productSnapshot?.imageUrl || '')}"
+               alt="${escapeHtml(order.productSnapshot?.title || 'Product')}"
                class="order-image"
                onerror="this.src='https://via.placeholder.com/80/1a0a2e/00ffff?text=No+Image'">
           <div class="order-details">
             <div class="order-product-title">${escapeHtml(order.productSnapshot?.title || 'Product')}</div>
             <div class="order-price">${formatCurrency(order.finalAmount || order.productSnapshot?.discountedPrice || 0)}</div>
             ${order.couponUsed ? `<div style="font-size: 12px; color: #00ff88; margin-top: 5px;">
-              <i class="fas fa-ticket-alt"></i> Coupon: ${escapeHtml(order.couponUsed)} 
-              (+${formatCurrency(order.discountAmount || 0)})
+              <i class="fas fa-ticket-alt"></i> Coupon: ${escapeHtml(order.couponUsed)}
+              (-${formatCurrency(order.discountAmount || 0)})
             </div>` : ''}
           </div>
         </div>
         <div class="order-footer">
           <div class="order-utr">
-            <strong>UTR ID:</strong> ${escapeHtml(order.userInput?.utrId || 'N/A')}
+            <strong>${order.paymentProvider === 'oxapay' ? 'Payment Reference' : 'UTR ID'}:</strong> ${escapeHtml(order.paymentTrackId || order.userInput?.utrId || 'N/A')}
           </div>
           <div style="font-size: 12px; color: #999;">
             <i class="fas fa-user"></i> ${escapeHtml(order.userInput?.name || 'N/A')}
           </div>
           ${showDownloadBtn ? `
-            <button class="download-btn" onclick="window.open('${escapeHtml(downloadLink)}', '_blank')">
+            <button class="download-btn" onclick="downloadOwnedFile('${encodeURIComponent(orderId)}', this)">
               <i class="fas fa-download"></i> Download
             </button>
           ` : ''}
@@ -4223,10 +4540,10 @@ function applyFilter(products, filter) {
       }
 
       toggleMenu();
-      
+
       document.getElementById('chatModal').classList.add('active');
       document.body.style.overflow = 'hidden';
-      
+
       loadChatMessages();
     }
 
@@ -4236,7 +4553,7 @@ function applyFilter(products, filter) {
 
       try {
         const chatRef = window.dbRef(window.db, `chats/${window.currentUser.uid}/messages`);
-        
+
         window.dbOnValue(chatRef, (snapshot) => {
           const messagesContainer = document.getElementById('chatMessages');
           messagesContainer.innerHTML = '';
@@ -4272,7 +4589,7 @@ function applyFilter(products, filter) {
     function createChatMessage(msg) {
       const messageDiv = document.createElement('div');
       messageDiv.className = `chat-message ${msg.sender === 'user' ? 'user' : 'admin'}`;
-      
+
       const time = new Date(msg.timestamp).toLocaleTimeString('en-IN', {
         hour: '2-digit',
         minute: '2-digit'
@@ -4352,9 +4669,9 @@ function applyFilter(products, filter) {
 
       try {
         showLoading('Loading contact information...');
-        
+
         const snapshot = await window.dbGet(window.dbRef(window.db, 'meta/contact'));
-        
+
         hideLoading();
 
         let contactInfo = {};
@@ -4478,10 +4795,10 @@ Once payment is completed, the download link for your purchased digital item (HT
     function toggleAccordion(header) {
       const item = header.parentElement;
       const wasActive = item.classList.contains('active');
-      
+
       // Close all accordions
       document.querySelectorAll('.accordion-item').forEach(i => i.classList.remove('active'));
-      
+
       // Open clicked accordion if it wasn't active
       if (!wasActive) {
         item.classList.add('active');
@@ -4529,17 +4846,17 @@ Once payment is completed, the download link for your purchased digital item (HT
         showLoading('Logging in...');
         await window.authSignIn(window.auth, email, password);
         hideLoading();
-        
+
         closeModal('authModal');
-        
+
         document.getElementById('loginEmail').value = '';
         document.getElementById('loginPassword').value = '';
-        
+
         showNotification(`Welcome back, ${window.currentUser.displayName || 'User'}!`, 'success');
       } catch (error) {
         hideLoading();
         console.error('Login error:', error);
-        
+
         let errorMsg = 'Login failed';
         if (error.code === 'auth/user-not-found') {
           errorMsg = 'No account found with this email';
@@ -4552,7 +4869,7 @@ Once payment is completed, the download link for your purchased digital item (HT
         } else {
           errorMsg = error.message;
         }
-        
+
         showNotification(errorMsg, 'error');
       }
     }
@@ -4581,27 +4898,27 @@ Once payment is completed, the download link for your purchased digital item (HT
         showLoading('Creating account...');
         const userCredential = await window.authCreateUser(window.auth, email, password);
         await window.authUpdateProfile(userCredential.user, { displayName: name });
-        
+
         // Create user profile in database
         await window.dbSet(window.dbRef(window.db, `users/${userCredential.user.uid}/profile`), {
           name: name,
           email: email,
           createdAt: new Date().toISOString()
         });
-        
+
         hideLoading();
-        
+
         closeModal('authModal');
-        
+
         document.getElementById('signupName').value = '';
         document.getElementById('signupEmail').value = '';
         document.getElementById('signupPassword').value = '';
-        
+
         showNotification(`Welcome to our store, ${name}!`, 'success');
       } catch (error) {
         hideLoading();
         console.error('Signup error:', error);
-        
+
         let errorMsg = 'Signup failed';
         if (error.code === 'auth/email-already-in-use') {
           errorMsg = 'This email is already registered';
@@ -4612,7 +4929,7 @@ Once payment is completed, the download link for your purchased digital item (HT
         } else {
           errorMsg = error.message;
         }
-        
+
         showNotification(errorMsg, 'error');
       }
     }
@@ -4622,10 +4939,10 @@ Once payment is completed, the download link for your purchased digital item (HT
         showLoading('Logging out...');
         await window.authSignOut(window.auth);
         hideLoading();
-        
+
         toggleMenu();
         showProducts();
-        
+
         showNotification('Logged out successfully', 'success');
       } catch (error) {
         hideLoading();
@@ -4643,7 +4960,8 @@ Once payment is completed, the download link for your purchased digital item (HT
       eligible: false,
       scratchReward: null,
       scratchRevealed: false,
-      scratchDrawing: false
+      scratchDrawing: false,
+      wheelTickTimer: null
     };
 
     const GAME_ONE_DAY_MS = 24 * 60 * 60 * 1000;
@@ -4733,12 +5051,11 @@ Once payment is completed, the download link for your purchased digital item (HT
 
     // Records that the user has played today (locks out BOTH games until
     // tomorrow) and, on a win, records which coupon they were shown.
-    async function recordGamePlay(wonCode) {
-      const uid = window.currentUser.uid;
-      await window.dbSet(window.dbRef(window.db, `gamePlays/${uid}/lastPlayed`), Date.now());
-      if (wonCode) {
-        await window.dbSet(window.dbRef(window.db, `gamePlays/${uid}/lastCoupon`), wonCode);
-      }
+    async function recordGamePlay(game) {
+      return apiRequest('/api/games/play', {
+        method: 'POST',
+        body: JSON.stringify({ game })
+      });
     }
 
     function copySpinCoupon(code) {
@@ -4795,27 +5112,24 @@ Once payment is completed, the download link for your purchased digital item (HT
     function renderWheelSegments(realCoupons) {
       const TOTAL_SEGMENTS = 8;
       const segments = realCoupons.map(c => ({ type: 'coupon', label: c.code, code: c.code }));
-      while (segments.length < TOTAL_SEGMENTS) {
-        segments.push({ type: 'lose', label: 'Try Again' });
+      while (segments.length < TOTAL_SEGMENTS) segments.push({ type: 'lose', label: 'Try Again' });
+      for (let i = segments.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [segments[i], segments[j]] = [segments[j], segments[i]];
       }
-      segments.sort(() => Math.random() - 0.5);
 
       window.gameState.segments = segments;
-
       const winColors = ['#00ffff', '#a855f7', '#00ff88', '#ffa500'];
       const loseColor = '#241432';
-
       const anglePer = 360 / TOTAL_SEGMENTS;
-      let gradientParts = [];
+      const gradientParts = [];
       let labelHtml = '';
 
       segments.forEach((seg, i) => {
         const color = seg.type === 'coupon' ? winColors[i % winColors.length] : loseColor;
-        const start = i * anglePer;
-        const end = start + anglePer;
-        gradientParts.push(`${color} ${start}deg ${end}deg`);
-
-        const midAngle = start + anglePer / 2;
+        const startAngle = i * anglePer;
+        gradientParts.push(`${color} ${startAngle}deg ${startAngle + anglePer}deg`);
+        const midAngle = startAngle + anglePer / 2;
         labelHtml += `<div class="wheel-segment-label" style="transform: rotate(${midAngle}deg) translateY(-95px);">${escapeHtml(seg.label)}</div>`;
       });
 
@@ -4823,15 +5137,31 @@ Once payment is completed, the download link for your purchased digital item (HT
       wheel.style.background = `conic-gradient(${gradientParts.join(', ')})`;
       wheel.style.transition = 'none';
       wheel.style.transform = 'rotate(0deg)';
-      void wheel.offsetWidth; // force reflow before re-enabling the transition
-      wheel.style.transition = 'transform 4.5s cubic-bezier(0.12, 0.85, 0.2, 1)';
-
+      void wheel.offsetWidth;
+      wheel.style.transition = 'transform 5.2s cubic-bezier(0.12, 0.82, 0.18, 1)';
       wheel.innerHTML = `<div class="wheel-center">🎁</div>${labelHtml}`;
     }
 
-    function spinWheel() {
-      if (window.gameState.isSpinning || !window.gameState.eligible) return;
+    function playWheelTick() {
+      try {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContext) return;
+        window.gameAudioContext = window.gameAudioContext || new AudioContext();
+        const oscillator = window.gameAudioContext.createOscillator();
+        const gain = window.gameAudioContext.createGain();
+        oscillator.type = 'triangle';
+        oscillator.frequency.value = 720;
+        gain.gain.setValueAtTime(0.0001, window.gameAudioContext.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.045, window.gameAudioContext.currentTime + 0.006);
+        gain.gain.exponentialRampToValueAtTime(0.0001, window.gameAudioContext.currentTime + 0.035);
+        oscillator.connect(gain).connect(window.gameAudioContext.destination);
+        oscillator.start();
+        oscillator.stop(window.gameAudioContext.currentTime + 0.04);
+      } catch (_) { /* Audio is an enhancement; the game must still work silently. */ }
+    }
 
+    async function spinWheel() {
+      if (window.gameState.isSpinning || !window.gameState.eligible) return;
       const segments = window.gameState.segments;
       if (!segments || segments.length === 0) return;
 
@@ -4840,27 +5170,48 @@ Once payment is completed, the download link for your purchased digital item (HT
       document.getElementById('spinStatus').textContent = 'Spinning...';
       document.getElementById('spinResult').className = 'spin-result';
       document.getElementById('spinResult').innerHTML = '';
+      if ('vibrate' in navigator) navigator.vibrate([20, 35, 20]);
+      playWheelTick();
+      if (window.gameState.wheelTickTimer) clearInterval(window.gameState.wheelTickTimer);
+      let tickDelay = 95;
+      window.gameState.wheelTickTimer = setInterval(() => {
+        playWheelTick();
+        tickDelay = Math.min(220, tickDelay + 6);
+      }, tickDelay);
 
-      const TOTAL_SEGMENTS = segments.length;
-      const anglePer = 360 / TOTAL_SEGMENTS;
-      const winningIndex = Math.floor(Math.random() * TOTAL_SEGMENTS);
+      let authoritativeResult;
+      try {
+        authoritativeResult = await recordGamePlay('spin');
+      } catch (error) {
+        window.gameState.isSpinning = false;
+        document.getElementById('spinBtn').disabled = false;
+        document.getElementById('spinStatus').textContent = error.message;
+        return;
+      }
+      const winningIndex = authoritativeResult.couponCode
+        ? Math.max(0, segments.findIndex(segment => segment.type === 'coupon' && segment.code === authoritativeResult.couponCode))
+        : Math.max(0, segments.findIndex(segment => segment.type === 'lose'));
+      const anglePer = 360 / segments.length;
       const midAngle = winningIndex * anglePer + anglePer / 2;
-      const jitter = (Math.random() - 0.5) * (anglePer * 0.5);
-
-      const extraSpins = 5 * 360;
-      const targetRotation = extraSpins + ((360 - midAngle + jitter + 360) % 360);
-
+      const jitter = (Math.random() - 0.5) * anglePer * 0.55;
+      const targetRotation = 6 * 360 + ((360 - midAngle + jitter + 360) % 360);
       const wheel = document.getElementById('spinWheel');
       wheel.style.transform = `rotate(${targetRotation}deg)`;
 
-      const onDone = () => {
-        wheel.removeEventListener('transitionend', onDone);
-        handleSpinResult(segments[winningIndex]);
+      let settled = false;
+      const finish = () => {
+        if (settled) return;
+        settled = true;
+        if (window.gameState.wheelTickTimer) clearInterval(window.gameState.wheelTickTimer);
+        window.gameState.wheelTickTimer = null;
+        wheel.removeEventListener('transitionend', finish);
+        handleSpinResult(segments[winningIndex], authoritativeResult);
       };
-      wheel.addEventListener('transitionend', onDone);
+      wheel.addEventListener('transitionend', finish, { once: true });
+      setTimeout(finish, 5700);
     }
 
-    async function handleSpinResult(segment) {
+    async function handleSpinResult(segment, authoritativeResult = null) {
       window.gameState.isSpinning = false;
       window.gameState.eligible = false;
 
@@ -4868,16 +5219,16 @@ Once payment is completed, the download link for your purchased digital item (HT
       const resultEl = document.getElementById('spinResult');
 
       try {
-        await recordGamePlay(segment.type === 'coupon' ? segment.code : null);
-
-        if (segment.type === 'coupon') {
+        const result = authoritativeResult || await recordGamePlay('spin');
+        const rewardCode = result.couponCode;
+        if (result.won && rewardCode) {
           statusEl.textContent = '';
           resultEl.className = 'spin-result win';
           resultEl.innerHTML = `
             <div style="font-size: 32px;">🎉</div>
             <div>You won a coupon!</div>
-            <div class="spin-coupon-code">${escapeHtml(segment.code)}</div>
-            <button class="btn btn-primary" style="margin-top: 5px;" onclick="copySpinCoupon('${segment.code.replace(/'/g, "\\'")}')">
+            <div class="spin-coupon-code">${escapeHtml(rewardCode)}</div>
+            <button class="btn btn-primary" style="margin-top: 5px;" onclick="copySpinCoupon('${rewardCode.replace(/'/g, "\\'")}')">
               <i class="fas fa-copy"></i> Copy Code
             </button>
             <div style="font-size: 11px; color: rgba(255,255,255,0.5); margin-top: 8px;">
@@ -4965,86 +5316,108 @@ Once payment is completed, the download link for your purchased digital item (HT
     function drawScratchOverlay(scratchable) {
       const canvas = document.getElementById('scratchCanvas');
       const ctx = canvas.getContext('2d');
-
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       ctx.globalCompositeOperation = 'source-over';
 
       const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
-      gradient.addColorStop(0, '#8a8fa3');
-      gradient.addColorStop(1, '#5b5f73');
+      gradient.addColorStop(0, '#a7adbd');
+      gradient.addColorStop(0.42, '#646a7d');
+      gradient.addColorStop(1, '#3e4251');
       ctx.fillStyle = gradient;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      ctx.fillStyle = 'rgba(255,255,255,0.85)';
+      for (let i = 0; i < 420; i++) {
+        const x = Math.random() * canvas.width;
+        const y = Math.random() * canvas.height;
+        const radius = Math.random() * 1.8 + 0.4;
+        ctx.fillStyle = `rgba(255,255,255,${Math.random() * 0.22 + 0.08})`;
+        ctx.beginPath();
+        ctx.arc(x, y, radius, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.fillStyle = 'rgba(255,255,255,0.92)';
       ctx.font = 'bold 15px Arial';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillText(scratchable ? '✨ Scratch Here ✨' : 'Not available right now', canvas.width / 2, canvas.height / 2);
+      ctx.fillText(scratchable ? '✦ Scratch to reveal ✦' : 'Not available right now', canvas.width / 2, canvas.height / 2);
 
       canvas.style.pointerEvents = scratchable ? 'auto' : 'none';
-      if (scratchable) {
-        setupScratchListeners(canvas, ctx);
-      }
+      if (scratchable) setupScratchListeners(canvas);
     }
 
-    function setupScratchListeners(canvas, ctx) {
-      // Avoid stacking duplicate listeners across game sessions
+    function setupScratchListeners(canvas) {
       const freshCanvas = canvas.cloneNode(true);
       canvas.parentNode.replaceChild(freshCanvas, canvas);
-      const freshCtx = freshCanvas.getContext('2d');
-      freshCtx.drawImage(canvas, 0, 0);
+      const ctx = freshCanvas.getContext('2d');
+      let drawing = false;
+      let lastX = null;
+      let lastY = null;
+      let lastCheck = 0;
 
       const scratch = (clientX, clientY) => {
         const rect = freshCanvas.getBoundingClientRect();
         const x = (clientX - rect.left) * (freshCanvas.width / rect.width);
         const y = (clientY - rect.top) * (freshCanvas.height / rect.height);
-
-        freshCtx.globalCompositeOperation = 'destination-out';
-        freshCtx.beginPath();
-        freshCtx.arc(x, y, 18, 0, Math.PI * 2);
-        freshCtx.fill();
+        ctx.globalCompositeOperation = 'destination-out';
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.lineWidth = 34;
+        ctx.beginPath();
+        if (lastX !== null) {
+          ctx.moveTo(lastX, lastY);
+          ctx.lineTo(x, y);
+        } else {
+          ctx.moveTo(x, y);
+          ctx.lineTo(x + 0.1, y + 0.1);
+        }
+        ctx.stroke();
+        lastX = x;
+        lastY = y;
+        if ('vibrate' in navigator && Math.random() < 0.08) navigator.vibrate(4);
       };
 
-      const checkScratchProgress = () => {
-        const imageData = freshCtx.getImageData(0, 0, freshCanvas.width, freshCanvas.height).data;
+      const checkScratchProgress = (force = false) => {
+        const now = performance.now();
+        if (!force && now - lastCheck < 120) return;
+        lastCheck = now;
+        const imageData = ctx.getImageData(0, 0, freshCanvas.width, freshCanvas.height).data;
         let cleared = 0;
-        const sampleStep = 4; // sample every 4th pixel's alpha channel for performance
         let sampled = 0;
-        for (let i = 3; i < imageData.length; i += 4 * sampleStep) {
+        for (let i = 3; i < imageData.length; i += 16) {
           sampled++;
           if (imageData[i] < 40) cleared++;
         }
-        const percentCleared = cleared / sampled;
-        if (percentCleared > 0.5 && !window.gameState.scratchRevealed) {
+        if (cleared / sampled > 0.44 && !window.gameState.scratchRevealed) {
           window.gameState.scratchRevealed = true;
-          freshCanvas.style.transition = 'opacity 0.4s';
+          freshCanvas.style.transition = 'opacity 0.45s ease';
           freshCanvas.style.opacity = '0';
-          setTimeout(() => { freshCanvas.style.pointerEvents = 'none'; }, 400);
+          freshCanvas.style.pointerEvents = 'none';
           finishScratchCard();
         }
       };
 
-      let drawing = false;
-
-      freshCanvas.addEventListener('mousedown', (e) => { drawing = true; scratch(e.clientX, e.clientY); });
-      freshCanvas.addEventListener('mousemove', (e) => { if (drawing) { scratch(e.clientX, e.clientY); checkScratchProgress(); } });
-      window.addEventListener('mouseup', () => { drawing = false; });
-
-      freshCanvas.addEventListener('touchstart', (e) => {
+      const stop = () => {
+        drawing = false;
+        lastX = null;
+        lastY = null;
+        checkScratchProgress(true);
+      };
+      freshCanvas.addEventListener('pointerdown', event => {
         drawing = true;
-        const t = e.touches[0];
-        scratch(t.clientX, t.clientY);
-        e.preventDefault();
-      }, { passive: false });
-      freshCanvas.addEventListener('touchmove', (e) => {
-        if (drawing) {
-          const t = e.touches[0];
-          scratch(t.clientX, t.clientY);
-          checkScratchProgress();
-        }
-        e.preventDefault();
-      }, { passive: false });
-      freshCanvas.addEventListener('touchend', () => { drawing = false; });
+        freshCanvas.setPointerCapture?.(event.pointerId);
+        scratch(event.clientX, event.clientY);
+        checkScratchProgress(true);
+        event.preventDefault();
+      });
+      freshCanvas.addEventListener('pointermove', event => {
+        if (!drawing) return;
+        scratch(event.clientX, event.clientY);
+        checkScratchProgress();
+        event.preventDefault();
+      });
+      freshCanvas.addEventListener('pointerup', stop);
+      freshCanvas.addEventListener('pointercancel', stop);
+      freshCanvas.addEventListener('pointerleave', () => { if (drawing) checkScratchProgress(); });
     }
 
     async function finishScratchCard() {
@@ -5053,16 +5426,17 @@ Once payment is completed, the download link for your purchased digital item (HT
       const reward = window.gameState.scratchReward;
 
       try {
-        await recordGamePlay(reward && reward.type === 'coupon' ? reward.code : null);
+        const result = await recordGamePlay('scratch');
+        const rewardCode = result.couponCode;
 
-        if (reward && reward.type === 'coupon') {
+        if (result.won && rewardCode) {
           statusEl.textContent = '';
           resultEl.className = 'spin-result win';
           resultEl.innerHTML = `
             <div style="font-size: 32px;">🎉</div>
             <div>You won a coupon!</div>
-            <div class="spin-coupon-code">${escapeHtml(reward.code)}</div>
-            <button class="btn btn-primary" style="margin-top: 5px;" onclick="copySpinCoupon('${reward.code.replace(/'/g, "\\'")}')">
+            <div class="spin-coupon-code">${escapeHtml(rewardCode)}</div>
+            <button class="btn btn-primary" style="margin-top: 5px;" onclick="copySpinCoupon('${rewardCode.replace(/'/g, "\\'")}')">
               <i class="fas fa-copy"></i> Copy Code
             </button>
             <div style="font-size: 11px; color: rgba(255,255,255,0.5); margin-top: 8px;">
@@ -5111,7 +5485,7 @@ Once payment is completed, the download link for your purchased digital item (HT
 
     // Display empty state
     function displayEmptyState(type) {
-      const grid = type === 'products' ? document.getElementById('productsGrid') : 
+      const grid = type === 'products' ? document.getElementById('productsGrid') :
                    type === 'bookmarks' ? document.getElementById('bookmarksGrid') :
                    type === 'orders' ? document.getElementById('purchasesList') :
                    document.getElementById('productsGrid');
@@ -5176,16 +5550,16 @@ Once payment is completed, the download link for your purchased digital item (HT
           modal.classList.remove('active');
           document.body.style.overflow = '';
         });
-        
+
         if (document.getElementById('confirmDialog').classList.contains('active')) {
           hideConfirmDialog();
         }
-        
+
         // Close cart sidebar
         if (document.getElementById('cartSidebar').classList.contains('active')) {
           toggleCart();
         }
-        
+
         // Close menu sidebar
         if (document.getElementById('sidebar').classList.contains('active')) {
           toggleMenu();
@@ -5215,7 +5589,7 @@ Once payment is completed, the download link for your purchased digital item (HT
       input.addEventListener('keypress', function(e) {
         if (e.key === 'Enter') {
           e.preventDefault();
-          
+
           const modal = this.closest('.modal');
           const submitBtn = modal.querySelector('.btn');
           if (submitBtn) {
@@ -5232,13 +5606,13 @@ Once payment is completed, the download link for your purchased digital item (HT
     window.addEventListener('load', function() {
       // Hide loading overlay if still showing
       hideLoading();
-      
+
       // Load initial products
       loadProducts();
-      
+
       // Update menu
       updateMenu();
-      
+
       // Load cart from storage
       loadCartFromStorage();
 

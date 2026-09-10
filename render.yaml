@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: cipher-store
+    env: node
+    plan: free
+    buildCommand: npm ci
+    startCommand: npm start
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      - key: OXAPAY_MERCHANT_API_KEY
+        sync: false
+      - key: OXAPAY_SANDBOX
+        value: "true"
+      - key: PUBLIC_BASE_URL
+        sync: false
+      - key: ALLOWED_ORIGIN
+        sync: false
+      - key: FIREBASE_DATABASE_URL
+        value: "https://cipher-pro-store-default-rtdb.firebaseio.com"
+      - key: FIREBASE_SERVICE_ACCOUNT_JSON
+        sync: false
