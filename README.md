@@ -54,7 +54,17 @@ The Render service runs hourly maintenance when Firebase Admin credentials are c
 
 ## Important Firebase rules requirement
 
-The browser still uses Firebase Auth for identity and Firebase Realtime Database for storefront reads. Before production, deploy Realtime Database Rules that prevent clients from writing `orders`, `paymentSessions`, `paymentEvents`, coupon counters, reward balances, referral rewards, or reviews for other users. The secure Node service is the authority for payment, purchases, rewards, referrals, and verified reviews. Admin screens should be protected by admin-only Firebase claims or a separate admin role; do not rely on a hidden client-side password.
+The browser still uses Firebase Auth for identity and Firebase Realtime Database for storefront reads. Before production, deploy Realtime Database Rules that prevent clients from writing `orders`, `paymentSessions`, `paymentEvents`, coupon counters, reward balances, referral rewards, or reviews for other users. The secure Node service is the authority for payment, purchases, rewards, referrals, and verified reviews.
+
+### Granting administrator access
+
+The admin page does not grant administrator access during browser setup. A signed-in account must have the Firebase custom claim `admin: true`; otherwise the page signs it out and protected writes are rejected by `rules.json`. After creating the account in Firebase Authentication, run this command on a trusted machine with the service-account JSON in `.env.local`:
+
+```bash
+npm run set-admin -- admin@example.com
+```
+
+Sign out and sign back in at `/admin.html` after running it. This enables product, coupon, order, settings, and support-message edits. Never put the service-account JSON in the browser or commit `.env.local`.
 
 ## Render production checklist
 

@@ -6,10 +6,10 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "check": "node --check server.js"
+    "check": "node --check server.js && node --check scripts/set-admin-claim.js",
+    "set-admin": "node scripts/set-admin-claim.js"
   },
   "dependencies": {
     "firebase-admin": "^13.5.0"
   }
 }
-

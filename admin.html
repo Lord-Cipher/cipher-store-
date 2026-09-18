@@ -2630,20 +2630,16 @@
         
         hideLoadingOverlay();
         
-        if (snapshot.exists() && snapshot.val() === true) {
-          document.getElementById('setupScreen').style.display = 'none';
-          document.getElementById('loginScreen').style.display = 'flex';
-          document.getElementById('menuToggle').classList.add('hidden');
-        } else {
-          document.getElementById('setupScreen').style.display = 'flex';
-          document.getElementById('loginScreen').style.display = 'none';
-          document.getElementById('menuToggle').classList.add('hidden');
-        }
+        // The database rules require auth.token.admin === true. A database
+        // flag must never be used as an administrator credential.
+        document.getElementById('setupScreen').style.display = 'none';
+        document.getElementById('loginScreen').style.display = 'flex';
+        document.getElementById('menuToggle').classList.add('hidden');
       } catch (error) {
         console.error('Error checking admin setup:', error);
         hideLoadingOverlay();
-        document.getElementById('setupScreen').style.display = 'flex';
-        document.getElementById('loginScreen').style.display = 'none';
+        document.getElementById('setupScreen').style.display = 'none';
+        document.getElementById('loginScreen').style.display = 'flex';
         document.getElementById('menuToggle').classList.add('hidden');
       }
     }
@@ -2694,8 +2690,21 @@
       activeListeners = [];
     }
 
-    onAuthStateChanged(auth, (user) => {
+    onAuthStateChanged(auth, async (user) => {
       if (user) {
+        try {
+          const tokenResult = await user.getIdTokenResult(true);
+          if (tokenResult.claims.admin !== true) {
+            await signOut(auth);
+            showMessage('loginError', 'This account is not an administrator. Set the Firebase admin custom claim first.', 'error');
+            return;
+          }
+        } catch (error) {
+          console.error('Could not verify admin claims:', error);
+          await signOut(auth);
+          showMessage('loginError', 'Could not verify administrator access. Please try again.', 'error');
+          return;
+        }
         hideLoadingOverlay();
         document.getElementById('setupScreen').style.display = 'none';
         document.getElementById('loginScreen').style.display = 'none';
