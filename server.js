@@ -1288,18 +1288,21 @@ async function getRewardOverview(user) {
   const profile = profileSnapshot.val() || {};
   const rewards = rewardsSnapshot.val() || {};
   const today = new Date().toISOString().slice(0, 10);
-  const lastDay = safeString(profile.lastLoginDay, 20);
+  let lastDay = safeString(profile.lastLoginDay, 20);
+  let earnedLoginPoints = false;
   let streak = Number(profile.loginStreak || 0);
   if (lastDay !== today) {
     const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
     streak = lastDay === yesterday ? streak + 1 : 1;
     await db.ref(`users/${user.uid}/profile`).update({ loginStreak: streak, lastLoginDay: today });
     await db.ref(`users/${user.uid}/rewards/points`).transaction(current => Number(current || 0) + 10);
+    lastDay = today;
+    earnedLoginPoints = true;
   }
   const leaderboard = Object.entries(usersSnapshot.val() || []).map(([uid, value]) => ({
-    uid, displayName: safeString(value?.profile?.displayName || 'Customer', 80), points: Number(value?.rewards?.lifetimePoints || 0)
-  })).sort((a, b) => b.points - a.points).slice(0, 20);
-  return { streak, missions: [{ id: 'daily-login', title: 'Log in today', reward: 10, completed: lastDay === today }], points: Number(rewards.points || 0), leaderboard };
+    uid, displayName: safeString(value?.profile?.displayName || 'Customer', 80), referrals: Object.keys(value?.referrals || {}).length, points: Number(value?.rewards?.lifetimePoints || 0)
+  })).sort((a, b) => b.referrals - a.referrals || b.points - a.points).slice(0, 20);
+  return { streak, missions: [{ id: 'daily-login', title: 'Log in today', reward: 10, completed: lastDay === today }], points: Number(rewards.points || 0) + (earnedLoginPoints ? 10 : 0), leaderboard };
 }
 
 async function openMysteryBox(user) {

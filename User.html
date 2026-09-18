@@ -2829,6 +2829,7 @@
         <div id="gamesAlreadyPlayedBanner" style="display: none; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255,255,255,0.15); border-radius: 10px; padding: 10px 14px; font-size: 12px; color: rgba(255,255,255,0.7); margin-top: 10px;">
           <i class="fas fa-clock"></i> <span id="gamesAlreadyPlayedText">You've already played today.</span>
         </div>
+        <label style="display:block;margin:12px 0;color:#00ffff;font-size:12px;"><input type="checkbox" id="coinGameToggle"> Use 25 coins for enhanced game rewards</label>
         <div class="games-grid">
           <div class="game-card" id="spinGameCard" onclick="openSpinWheel()">
             <div class="game-card-icon">🎡</div>
@@ -3168,7 +3169,7 @@
         showLoading('Loading rewards...');
         const data = await apiRequest('/api/rewards/overview');
         hideLoading();
-        const leaders = (data.leaderboard || []).slice(0, 10).map((item, index) => `<div class="hub-muted">${index + 1}. ${escapeHtml(item.displayName)} — ${item.points} points</div>`).join('');
+        const leaders = (data.leaderboard || []).slice(0, 10).map((item, index) => `<div class="hub-muted">${index + 1}. ${escapeHtml(item.displayName)} — ${item.referrals || 0} successful referral(s)</div>`).join('');
         showInfoModal('Rewards & Leaderboard', `<div class="hub-card"><div class="hub-card-title"><i class="fas fa-fire"></i> Login streak</div><strong>${data.streak}</strong><span>consecutive day(s)</span></div><div class="hub-card"><div class="hub-card-title"><i class="fas fa-star"></i> Points</div><strong>${data.points}</strong><span>available reward points</span><button class="btn btn-small" onclick="openMysteryBox()">Open mystery box (50 points)</button></div><h3 style="color:#00ffff;margin-top:18px;">Leaderboard</h3>${leaders || '<p class="hub-muted">No leaderboard entries yet.</p>'}`);
       } catch (error) {
         hideLoading();
@@ -4318,6 +4319,7 @@ function applyFilter(products, filter) {
         const rewards = data.rewards || {};
       const storeCredits = Number(data.storeCreditsCents || 0) / 100;
       const coins = Number(data.coins || 0);
+      const coinRows = (data.coinLedger || []).slice(0, 8).map(item => `<div class="hub-list-row"><span>${escapeHtml(item.reason || 'Coin activity')}</span><strong style="color:${Number(item.amount) >= 0 ? '#00ff88' : '#ff6b6b'}">${Number(item.amount) >= 0 ? '+' : ''}${Number(item.amount)}</strong></div>`).join('') || '<div class="hub-muted">No coin transactions yet.</div>';
       const game = data.game || {};
       const referrals = data.referrals || [];
       const notifications = data.notifications || [];
@@ -4352,6 +4354,7 @@ function applyFilter(products, filter) {
         </div>
         <div class="hub-section"><div class="hub-section-title"><i class="fas fa-coins"></i> Redeem reward points</div><div class="hub-referral-row"><input id="hubRedeemPointsInput" class="coupon-input" type="number" min="100" step="100" placeholder="Points, minimum 100"><button class="btn btn-small" onclick="redeemPointsFromHub()">Convert</button></div><div class="hub-muted" style="margin-top:8px;">Every 100 points becomes $1.00 in store credit.</div></div>
         <div class="hub-section"><div class="hub-section-title"><i class="fas fa-coins"></i> Redeem referral coins</div><div class="hub-referral-row"><input id="hubRedeemCoinsInput" class="coupon-input" type="number" min="100" step="100" placeholder="Coins, minimum 100"><button class="btn btn-small" onclick="redeemCoinsFromHub()">Convert</button></div><div class="hub-muted" style="margin-top:8px;">Your balance: ${coins} coins.</div></div>
+        <div class="hub-section"><div class="hub-section-title"><i class="fas fa-history"></i> Coin transaction history</div>${coinRows}</div>
         <div class="hub-section"><div class="hub-section-title"><i class="fas fa-gift"></i> Referral code</div><div class="hub-referral-row"><code id="hubReferralCode">${escapeHtml(data.profile?.referralCode || 'Generating...')}</code><button class="btn btn-small" onclick="copyReferralCode(document.getElementById('hubReferralCode').textContent)"><i class="fas fa-copy"></i> Copy</button></div><div class="hub-referral-row"><input id="hubReferralInput" class="coupon-input" placeholder="Have a referral code?"><button class="btn btn-small" onclick="applyReferralFromHub()">Apply</button></div></div>
         <div class="hub-section"><div class="hub-section-title"><i class="fas fa-bell"></i> Price alerts</div>${alertRows}</div>
         <div class="hub-section"><div class="hub-section-title"><i class="fas fa-medal"></i> Achievements</div><div class="hub-pills">${achievementRows}</div></div>
@@ -5206,7 +5209,7 @@ Once payment is completed, the download link for your purchased digital item (HT
     async function recordGamePlay(game) {
       return apiRequest('/api/games/play', {
         method: 'POST',
-        body: JSON.stringify({ game })
+        body: JSON.stringify({ game, coinEntry: Boolean(document.getElementById('coinGameToggle')?.checked) })
       });
     }
 
