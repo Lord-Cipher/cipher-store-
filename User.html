@@ -2762,6 +2762,7 @@
         <button class="btn btn-full" onclick="loginUser()">
           <i class="fas fa-sign-in-alt"></i> Login
         </button>
+        <div style="display:flex;gap:8px;margin-top:10px;"><button class="btn btn-small" onclick="loginWithProvider('google')"><i class="fab fa-google"></i> Google</button><button class="btn btn-small" onclick="loginWithProvider('github')"><i class="fab fa-github"></i> GitHub</button></div>
         <p style="text-align: center; margin-top: 15px; color: #999;">
           Don't have an account? <span style="color: #00ffff; cursor: pointer; font-weight: bold;" onclick="switchToSignup()">Sign up</span>
         </p>
@@ -2905,7 +2906,7 @@
     const apiData = async (method, path, value) => { const response = await fetch(`/api/data?path=${encodeURIComponent(path)}`, { method, headers: { 'Content-Type': 'application/json', ...(await token() ? { Authorization: `Bearer ${await token()}` } : {}) }, body: method === 'GET' || method === 'DELETE' ? undefined : JSON.stringify({ value }) }); if (!response.ok) throw new Error((await response.json().catch(() => ({}))).error || 'Database request failed'); return response.json(); };
     const snapshot = value => ({ exists: () => value !== null && value !== undefined, val: () => value });
     const ref = path => ({ path });
-    window.auth = { get currentUser() { return window.currentUser; } };
+    window.auth = { get currentUser() { return window.currentUser; }, onAuthStateChanged: callback => supabase.auth.onAuthStateChange((_event, session) => updateUser(session?.user || null)) };
     window.db = {};
     window.dbRef = (_, path) => ref(path);
     window.dbGet = async reference => snapshot(await apiData('GET', reference.path));
@@ -2922,6 +2923,7 @@
     window.authCreateUser = async (_, email, password) => { const { data, error } = await supabase.auth.signUp({ email, password, options: { data: { display_name: document.getElementById('signupName')?.value || 'Customer' } } }); if (error) throw error; return { user: data.user }; };
     window.authSignIn = async (_, email, password) => { const { data, error } = await supabase.auth.signInWithPassword({ email, password }); if (error) throw error; return { user: data.user }; };
     window.authSignOut = async () => supabase.auth.signOut();
+    window.authSignInWithProvider = async provider => { const { error } = await supabase.auth.signInWithOAuth({ provider, options: { redirectTo: `${window.location.origin}${window.location.pathname}` } }); if (error) throw error; };
     window.authUpdateProfile = async (user, profile) => supabase.auth.updateUser({ data: { display_name: profile.displayName } });
     window.currentUser = null; window.allProducts = []; window.currentProduct = null; window.cart = []; window.appliedCoupon = null; window.currentFilter = 'all'; window.confirmCallback = null;
     const updateUser = user => { window.currentUser = user ? { ...user, uid: user.id, displayName: user.user_metadata?.display_name || user.email, getIdToken: async () => (await supabase.auth.getSession()).data.session?.access_token } : null; updateMenu(); loadProducts(); loadCartFromStorage(); if (window.currentUser) { loadChatMessages(); setTimeout(handlePaymentReturn, 350); } };
@@ -4959,6 +4961,10 @@ Once payment is completed, the download link for your purchased digital item (HT
 
         showNotification(errorMsg, 'error');
       }
+    }
+
+    async function loginWithProvider(provider) {
+      try { await window.authSignInWithProvider(provider); } catch (error) { showNotification(error.message || `Could not sign in with ${provider}`, 'error'); }
     }
 
     async function signupUser() {

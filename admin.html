@@ -2060,6 +2060,7 @@
         <input type="password" id="loginPassword" placeholder="Enter password" autocomplete="current-password">
       </div>
       <button class="btn" id="loginBtn">Login</button>
+      <div style="display:flex;gap:8px;margin-top:10px;"><button class="btn" id="googleLoginBtn"><i class="fab fa-google"></i> Google</button><button class="btn" id="githubLoginBtn"><i class="fab fa-github"></i> GitHub</button></div>
     </div>
   </div>
 
@@ -2641,11 +2642,13 @@
     const onValue = (reference, callback) => { let stopped = false; const poll = async () => { if (stopped) return; callback(await get(reference)); if (!stopped) setTimeout(poll, 10000); }; poll(); return () => { stopped = true; }; };
     const off = () => {};
     const signInWithEmailAndPassword = (_, email, password) => auth.signInWithPassword({ email, password });
+    const createUserWithEmailAndPassword = (_, email, password) => auth.signUp({ email, password });
     const signOut = () => auth.signOut();
+    const signInWithProvider = async provider => { const { error } = await auth.signInWithOAuth({ provider, options: { redirectTo: `${window.location.origin}${window.location.pathname}` } }); if (error) throw error; };
     const updateProfile = (user, profile) => auth.updateUser({ data: { display_name: profile.displayName } });
     const onAuthStateChanged = callback => { auth.onAuthStateChange((_event, session) => { const user = session?.user ? { ...session.user, uid: session.user.id, displayName: session.user.user_metadata?.display_name || session.user.email, getIdToken: async () => (await auth.getSession()).data.session?.access_token, getIdTokenResult: async () => ({ claims: { admin: session.user.app_metadata?.admin === true || ['owner','admin','manager'].includes(session.user.app_metadata?.role) } }) } : null; window.currentUser = user; callback(user); }); };
     Object.defineProperty(auth, 'currentUser', { configurable: true, get: () => window.currentUser });
-    window.auth = auth; window.db = db; window.dbRef = (_, path) => ref(path); window.dbSet = set; window.dbGet = get; window.dbPush = push; window.dbRemove = remove; window.dbOnValue = onValue; window.dbUpdate = update; window.dbOff = off; window.signInWithEmailAndPassword = signInWithEmailAndPassword; window.signOut = signOut; window.updateProfile = updateProfile;
+    window.auth = auth; window.db = db; window.dbRef = (_, path) => ref(path); window.dbSet = set; window.dbGet = get; window.dbPush = push; window.dbRemove = remove; window.dbOnValue = onValue; window.dbUpdate = update; window.dbOff = off; window.signInWithEmailAndPassword = signInWithEmailAndPassword; window.signInWithProvider = signInWithProvider; window.signOut = signOut; window.createUserWithEmailAndPassword = createUserWithEmailAndPassword; window.updateProfile = updateProfile;
 
     let activeListeners = [];
 
@@ -3075,6 +3078,8 @@
     }
 
     document.getElementById('loginBtn')?.addEventListener('click', login);
+    document.getElementById('googleLoginBtn')?.addEventListener('click', () => window.signInWithProvider('google').catch(error => showMessage('loginError', error.message, 'error')));
+    document.getElementById('githubLoginBtn')?.addEventListener('click', () => window.signInWithProvider('github').catch(error => showMessage('loginError', error.message, 'error')));
 
     ['loginEmail', 'loginPassword'].forEach(id => {
       document.getElementById(id)?.addEventListener('keypress', (e) => {

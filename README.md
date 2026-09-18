@@ -18,6 +18,16 @@ SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
 
 The publishable key may be exposed to the browser. The service-role key must remain private in Render and trusted local administration scripts.
 
+## Authentication providers
+
+Email/password authentication is supported by Supabase Auth. Google and GitHub buttons are included on both the customer and admin login screens. In the Supabase dashboard, open **Authentication → Providers**, enable **Google** and **GitHub**, and enter the provider client ID and secret. Add the deployed storefront URL and `/admin.html` to the provider redirect allow-list as needed. Supabase’s callback URL is shown in the provider settings and normally follows this form:
+
+```text
+https://ozhejjbfmltmimmzwpdv.supabase.co/auth/v1/callback
+```
+
+Also add the local and Render origins under **Authentication → URL Configuration → Redirect URLs**, for example `http://localhost:8787/**` and `https://your-render-host.onrender.com/**`.
+
 ## Run locally
 
 ```bash
