@@ -34,6 +34,8 @@ Email/password signup uses a six-digit OTP. The verification screen is branded *
 
 Forgot-password recovery also uses a six-digit email OTP. The user selects **Forgot password? Recover with email OTP**, verifies the code, and chooses a new password. Copy the branded HTML examples from [`supabase-email-templates.md`](supabase-email-templates.md) into the Supabase email templates so the emails show CIPHER TECH STORE instead of the default Supabase branding.
 
+For the complete sender, SMTP, logo, DNS, and template instructions, see [`EMAIL_BRANDING_README.md`](EMAIL_BRANDING_README.md).
+
 No application can guarantee that a message will never enter spam. To improve delivery, configure a custom SMTP provider and a branded sender address such as `no-reply@yourdomain.com`, then publish the provider’s SPF and DKIM DNS records. Add a DMARC policy after SPF and DKIM pass, use a verified sending domain, keep the sender name as `CIPHER TECH STORE`, and avoid sending from a free mailbox address. Test with Gmail, Outlook, and Yahoo before production.
 
 ## Run locally
