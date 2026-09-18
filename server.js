@@ -1042,6 +1042,12 @@ async function awardPurchaseRewards(userId, orderId) {
 
 async function playRewardGame(user, body) {
   const game = ['spin', 'scratch'].includes(safeString(body.game, 20)) ? safeString(body.game, 20) : 'spin';
+  const coinEntry = body.coinEntry === true;
+  if (coinEntry) {
+    const entryResult = await getDatabase().ref(`users/${user.uid}/coins`).transaction(current => Number(current || 0) >= 25 ? Number(current || 0) - 25 : undefined);
+    if (!entryResult.committed) throw Object.assign(new Error('You need 25 coins to play the coin game'), { statusCode: 409 });
+    await getDatabase().ref(`users/${user.uid}/coinLedger`).push({ amount: -25, reason: `coin_game_${game}`, createdAt: new Date().toISOString() });
+  }
   const now = Date.now();
   const validCoupons = (await getValidGameCoupons()).slice(0, 6);
   const reward = validCoupons.length && crypto.randomInt(100) < Math.min(55, 20 + validCoupons.length * 6)
@@ -1063,14 +1069,22 @@ async function playRewardGame(user, body) {
       updatedAt: new Date(now).toISOString()
     };
   });
-  if (!play.committed) throw Object.assign(new Error('This account has already used its daily game play'), { statusCode: 409 });
-  const points = await incrementRewardPoints(user.uid, reward ? 50 : 10, `game_${game}`, { coupon: reward?.code || null });
+  if (!play.committed) {
+    if (coinEntry) {
+      await getDatabase().ref(`users/${user.uid}/coins`).transaction(current => Number(current || 0) + 25);
+      await getDatabase().ref(`users/${user.uid}/coinLedger`).push({ amount: 25, reason: 'coin_game_refund', createdAt: new Date().toISOString() });
+    }
+    throw Object.assign(new Error('This account has already used its daily game play'), { statusCode: 409 });
+  }
+  const multiplierSnapshot = await getDatabase().ref('meta/rewards/coinMultiplier').once('value');
+  const multiplier = Math.max(1, Math.min(5, Number(multiplierSnapshot.val() || 1)));
+  const points = await incrementRewardPoints(user.uid, Math.floor((reward ? 50 : 10) * multiplier), `game_${game}`, { coupon: reward?.code || null, coinEntry, multiplier });
   const playCount = Number(play.snapshot.val()?.playCount || 1);
   const achievementUpdates = {};
   if (playCount >= 1) achievementUpdates[`users/${user.uid}/achievements/first_game`] = { unlockedAt: new Date().toISOString(), title: 'First Game' };
   if (playCount >= 7) achievementUpdates[`users/${user.uid}/achievements/weekly_player`] = { unlockedAt: new Date().toISOString(), title: 'Weekly Player' };
   if (Object.keys(achievementUpdates).length) await getDatabase().ref().update(achievementUpdates);
-  return { game, won: Boolean(reward), couponCode: reward?.code || null, points, nextPlayAt: new Date(now + GAME_ONE_DAY_MS).toISOString() };
+  return { game, won: Boolean(reward), couponCode: reward?.code || null, points, coinEntry, multiplier, nextPlayAt: new Date(now + GAME_ONE_DAY_MS).toISOString() };
 }
 
 async function getMemberOverview(user) {
@@ -1302,6 +1316,21 @@ async function openMysteryBox(user) {
   return { cost: 50, reward, points: Number(result.snapshot.val()?.points || 0) };
 }
 
+async function giftCardToUser(user, body) {
+  const recipientEmail = safeString(body.recipientEmail, 320).toLowerCase();
+  const amountCents = cents(body.amount);
+  if (!recipientEmail || !Number.isInteger(amountCents) || amountCents < 100) throw Object.assign(new Error('Recipient email and amount of at least $1 are required'), { statusCode: 400 });
+  const recipient = await admin.auth().getUserByEmail(recipientEmail).catch(() => null);
+  if (!recipient || recipient.uid === user.uid) throw Object.assign(new Error('Recipient account was not found or cannot be yourself'), { statusCode: 400 });
+  const creditRef = getDatabase().ref(`users/${user.uid}/storeCreditsCents`);
+  const result = await creditRef.transaction(current => Number(current || 0) >= amountCents ? Number(current || 0) - amountCents : undefined);
+  if (!result.committed) throw Object.assign(new Error('You do not have enough store credit'), { statusCode: 409 });
+  const code = `GIFT-${crypto.randomBytes(6).toString('hex').toUpperCase()}`;
+  await getDatabase().ref(`giftCards/${code}`).set({ code, balanceCents: amountCents, originalBalanceCents: amountCents, active: true, giftedBy: user.uid, giftedTo: recipient.uid, giftedToEmail: recipientEmail, createdAt: new Date().toISOString() });
+  await getDatabase().ref(`users/${recipient.uid}/notifications`).push({ type: 'gift_card', title: 'You received a gift card', message: `A ${amountCents / 100} store-credit gift card is waiting for you.`, giftCardCode: code, createdAt: new Date().toISOString(), read: false });
+  return { code, amount: amountCents / 100, recipientEmail };
+}
+
 async function saveNotificationPreferences(user, body) {
   const preferences = {
     priceAlerts: body.priceAlerts !== false,
@@ -1312,6 +1341,49 @@ async function saveNotificationPreferences(user, body) {
   };
   await getDatabase().ref(`users/${user.uid}/notificationPreferences`).set(preferences);
   return preferences;
+}
+
+async function broadcastNotification(user, body) {
+  const title = safeString(body.title, 160);
+  const message = safeString(body.message, 1000);
+  if (!title || !message) throw Object.assign(new Error('Title and message are required'), { statusCode: 400 });
+  const snapshot = await getDatabase().ref('users').once('value');
+  const updates = {};
+  for (const uid of Object.keys(snapshot.val() || {})) {
+    const key = getDatabase().ref(`users/${uid}/notifications`).push().key;
+    updates[`users/${uid}/notifications/${key}`] = { type: 'broadcast', title, message, createdAt: new Date().toISOString(), read: false };
+  }
+  if (Object.keys(updates).length) await getDatabase().ref().update(updates);
+  await writeAudit(user, 'broadcast_notification', { title, recipientCount: Object.keys(snapshot.val() || {}).length });
+  return { sent: Object.keys(snapshot.val() || {}).length };
+}
+
+async function adjustUserCoins(adminUser, body) {
+  const uid = safeString(body.userId, 200);
+  const amount = Math.floor(Number(body.amount || 0));
+  if (!uid || !amount) throw Object.assign(new Error('User ID and non-zero coin amount are required'), { statusCode: 400 });
+  const coins = await incrementCoins(uid, amount, 'admin_adjustment', { adminId: adminUser.uid, note: safeString(body.note, 300) });
+  await writeAudit(adminUser, 'coin_adjustment', { userId: uid, amount, note: safeString(body.note, 300) });
+  return { userId: uid, coins };
+}
+
+async function createSupportTicket(user, body) {
+  const subject = safeString(body.subject, 160);
+  const message = safeString(body.message, 2000);
+  if (!subject || !message) throw Object.assign(new Error('Subject and message are required'), { statusCode: 400 });
+  const ref = getDatabase().ref(`supportTickets/${user.uid}`).push();
+  await ref.set({ id: ref.key, userId: user.uid, userEmail: safeString(user.email, 320), subject, message, priority: ['low', 'normal', 'high', 'urgent'].includes(body.priority) ? body.priority : 'normal', status: 'open', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() });
+  return { id: ref.key, status: 'open' };
+}
+
+async function updateSupportTicket(user, body) {
+  const uid = safeString(body.userId, 200);
+  const ticketId = safeString(body.ticketId, 200);
+  const status = safeString(body.status, 30);
+  const priority = safeString(body.priority, 30);
+  if (!uid || !ticketId || !['open', 'in_progress', 'resolved', 'closed'].includes(status)) throw Object.assign(new Error('Valid ticket ID, user ID, and status are required'), { statusCode: 400 });
+  await getDatabase().ref(`supportTickets/${uid}/${ticketId}`).update({ status, ...( ['low', 'normal', 'high', 'urgent'].includes(priority) ? { priority } : {}), updatedAt: new Date().toISOString(), updatedBy: user.uid });
+  return { updated: true };
 }
 
 async function handleApi(req, res, pathname) {
@@ -1413,6 +1485,21 @@ async function handleApi(req, res, pathname) {
   }
   if (pathname === '/api/gift-cards/redeem' && req.method === 'POST') {
     return json(res, 201, await redeemGiftCard(await requireUser(req), await readJson(req)));
+  }
+  if (pathname === '/api/gift-cards/gift' && req.method === 'POST') {
+    return json(res, 201, await giftCardToUser(await requireUser(req), await readJson(req)));
+  }
+  if (pathname === '/api/admin/broadcast' && req.method === 'POST') {
+    return json(res, 201, await broadcastNotification(await requireAdmin(req), await readJson(req)));
+  }
+  if (pathname === '/api/admin/coins/adjust' && req.method === 'POST') {
+    return json(res, 200, await adjustUserCoins(await requireAdmin(req), await readJson(req)));
+  }
+  if (pathname === '/api/support/tickets' && req.method === 'POST') {
+    return json(res, 201, await createSupportTicket(await requireUser(req), await readJson(req)));
+  }
+  if (pathname === '/api/admin/support-tickets' && req.method === 'PUT') {
+    return json(res, 200, await updateSupportTicket(await requireAdmin(req), await readJson(req)));
   }
   const changelogMatch = pathname.match(/^\/api\/admin\/products\/([^/]+)\/changelog$/);
   if (changelogMatch && req.method === 'PUT') {

@@ -197,6 +197,13 @@
       }
     },
 
+    "supportTickets": {
+      "$uid": {
+        ".read": "auth != null && (auth.uid === $uid || auth.token.admin === true)",
+        ".write": false
+      }
+    },
+
     "referralCodes": {
       ".read": false,
       ".write": false

@@ -3090,6 +3090,9 @@
           <div class="menu-item" onclick="showAdminSupport()">
             <i class="fas fa-headset"></i> Admin Support
           </div>
+          <div class="menu-item" onclick="createSupportTicketPrompt()">
+            <i class="fas fa-ticket-alt"></i> Create Support Ticket
+          </div>
           <div class="menu-item" onclick="openGamesModal()">
             <i class="fas fa-gamepad"></i> Get Coupon by Playing Games
           </div>
@@ -3131,6 +3134,17 @@
       document.getElementById('memberHubContent').innerHTML = html;
       modal.classList.add('active');
       document.body.style.overflow = 'hidden';
+    }
+
+    async function createSupportTicketPrompt() {
+      if (!window.currentUser) return requireLogin('create a support ticket');
+      const subject = prompt('Ticket subject:');
+      const message = subject && prompt('Describe the issue:');
+      if (!subject || !message) return;
+      try {
+        await apiRequest('/api/support/tickets', { method: 'POST', body: JSON.stringify({ subject, message, priority: 'normal' }) });
+        showNotification('Support ticket created.', 'success');
+      } catch (error) { showNotification(error.message, 'error'); }
     }
 
     async function redeemGiftCardPrompt() {
@@ -3743,6 +3757,12 @@ function applyFilter(products, filter) {
         return price === 0;
       });
 
+    case 'recent':
+      return [...products].sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0)).slice(0, 12);
+
+    case 'trending':
+      return [...products].sort((a, b) => Number(b.salesCount || b.purchaseCount || 0) - Number(a.salesCount || a.purchaseCount || 0)).slice(0, 12);
+
     default:
       // All Products
       return products;
@@ -4256,6 +4276,12 @@ function applyFilter(products, filter) {
       <button class="filter-btn" data-filter="free" onclick="filterProducts('free')">
         <i class="fas fa-tag"></i> Free Product
       </button>
+      <button class="filter-btn" data-filter="recent" onclick="filterProducts('recent')">
+        <i class="fas fa-clock"></i> Recently Added
+      </button>
+      <button class="filter-btn" data-filter="trending" onclick="filterProducts('trending')">
+        <i class="fas fa-fire"></i> Trending
+      </button>
     </div>
   </div>
   <h2 class="section-title"><i class="fas fa-shopping-bag"></i> Products</h2>
@@ -4407,7 +4433,7 @@ function applyFilter(products, filter) {
         const reviewData = await response.json();
         const product = window.allProducts.find(item => item.id === productId) || window.currentProduct || {};
         const isWishlisted = window.currentUser && (await window.dbGet(window.dbRef(window.db, `users/${window.currentUser.uid}/wishlist/${productId}`))).exists();
-        const reviews = (reviewData.reviews || []).slice(0, 3).map(review => `<div class="review-row"><div><strong>${escapeHtml(review.displayName)}</strong> <span class="review-stars">${'★'.repeat(review.rating)}${'☆'.repeat(5 - review.rating)}</span></div><p>${escapeHtml(review.comment)}</p></div>`).join('') || '<div class="hub-muted">No reviews yet. Verified purchasers can be first.</div>';
+        const reviews = (reviewData.reviews || []).slice(0, 3).map(review => `<div class="review-row"><div><strong>${escapeHtml(review.displayName)}</strong> ${review.verifiedPurchase ? '<span style="color:#00ff88;font-size:11px"><i class="fas fa-check-circle"></i> Verified buyer</span>' : ''} <span class="review-stars">${'★'.repeat(review.rating)}${'☆'.repeat(5 - review.rating)}</span></div><p>${escapeHtml(review.comment)}</p></div>`).join('') || '<div class="hub-muted">No reviews yet. Verified purchasers can be first.</div>';
         target.innerHTML = `<div class="product-insights"><div class="insight-summary"><strong>${reviewData.averageRating || '—'}</strong><span class="review-stars">${reviewData.reviewCount ? '★'.repeat(Math.round(reviewData.averageRating)) : '☆☆☆☆☆'}</span><small>${reviewData.reviewCount || 0} verified review(s)</small></div><div class="insight-actions"><button class="btn btn-small" onclick="toggleWishlistFromProduct('${productId}')"><i class="fas fa-heart"></i> ${isWishlisted ? 'Remove wishlist' : 'Add wishlist'}</button><button class="btn btn-small btn-secondary" onclick="createPriceAlertFromProduct('${productId}', ${Number(product.discountedPrice || 0)})"><i class="fas fa-bell"></i> Price alert</button><button class="btn btn-small btn-secondary" onclick="submitReviewFromProduct('${productId}')"><i class="fas fa-star"></i> Write review</button></div><div class="review-list">${reviews}</div></div>`;
       } catch (error) {
         target.innerHTML = '<div class="hub-muted">Customer insights are temporarily unavailable.</div>';
@@ -4575,6 +4601,18 @@ function applyFilter(products, filter) {
       }
     }
 
+    async function printReceipt(orderId) {
+      try {
+        const snapshot = await window.dbGet(window.dbRef(window.db, `orders/${orderId}`));
+        if (!snapshot.exists()) throw new Error('Invoice not found');
+        const order = snapshot.val();
+        const popup = window.open('', '_blank', 'width=720,height=720');
+        if (!popup) throw new Error('Allow pop-ups to print your receipt');
+        popup.document.write(`<html><head><title>Invoice ${escapeHtml(orderId)}</title><style>body{font-family:Arial;padding:40px;color:#111}h1{color:#4b2e83}table{width:100%;border-collapse:collapse}td{padding:12px;border-bottom:1px solid #ddd}.total{font-size:20px;font-weight:bold}</style></head><body><h1>Cipher Store Invoice</h1><p>Invoice: ${escapeHtml(orderId)}</p><p>Date: ${escapeHtml(new Date(order.createdAt || Date.now()).toLocaleString())}</p><table><tr><td>Product</td><td>${escapeHtml(order.productSnapshot?.title || 'Digital tool')}</td></tr><tr><td>Payment status</td><td>${escapeHtml(order.paymentStatus || order.status || 'confirmed')}</td></tr><tr><td class="total">Total</td><td class="total">${formatCurrency(order.orderTotal || order.amountPaid || 0)}</td></tr></table><p>Thank you for your purchase.</p><script>window.print();</script></body></html>`);
+        popup.document.close();
+      } catch (error) { showNotification(error.message, 'error'); }
+    }
+
     // Create order card with download button
     function createOrderCard(orderId, order, downloadLink) {
       const card = document.createElement('div');
@@ -4629,6 +4667,7 @@ function applyFilter(products, filter) {
               <i class="fas fa-download"></i> Download
             </button>
           ` : ''}
+          ${status === 'confirmed' ? `<button class="download-btn" onclick="printReceipt('${encodeURIComponent(orderId)}')"><i class="fas fa-file-invoice"></i> Print Invoice</button>` : ''}
         </div>
       `;
 

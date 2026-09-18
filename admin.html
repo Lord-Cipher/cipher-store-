@@ -2467,6 +2467,14 @@
         </div>
         <div id="chatUsersList" class="chat-users-list"></div>
       </div>
+      <div class="card">
+        <h2 class="card-title"><i class="fas fa-ticket-alt"></i> Update Support Ticket</h2>
+        <input type="text" id="ticketUserId" placeholder="Customer Firebase UID" style="width:100%;margin-bottom:10px;padding:12px">
+        <input type="text" id="ticketId" placeholder="Ticket ID" style="width:100%;margin-bottom:10px;padding:12px">
+        <select id="ticketStatus" style="width:100%;margin-bottom:10px;padding:12px"><option>open</option><option>in_progress</option><option>resolved</option><option>closed</option></select>
+        <select id="ticketPriority" style="width:100%;margin-bottom:10px;padding:12px"><option>normal</option><option>low</option><option>high</option><option>urgent</option></select>
+        <button type="button" class="btn" id="updateTicketBtn">Update Ticket</button>
+      </div>
     </div>
 
     <!-- Settings Tab -->
@@ -2519,6 +2527,21 @@
         <div class="input-group"><label>Credit cents per coin</label><input type="number" id="coinToCreditCents" min="1" value="1"></div>
         <label style="display:block;margin:12px 0;color:#00ffff"><input type="checkbox" id="referralsEnabled" checked> Enable referral rewards</label>
         <button type="button" class="btn" id="saveReferralConfigBtn"><i class="fas fa-save"></i> Save Referral Settings</button>
+      </div>
+      <div class="card">
+        <h2 class="card-title"><i class="fas fa-bullhorn"></i> Broadcast Notification</h2>
+        <div id="broadcastSuccess" style="display:none" class="success-message"></div>
+        <input type="text" id="broadcastTitle" placeholder="Announcement title" style="width:100%;margin-bottom:10px;padding:12px">
+        <textarea id="broadcastMessage" placeholder="Message for all customers" style="width:100%;min-height:90px;padding:12px"></textarea>
+        <button type="button" class="btn" id="broadcastBtn"><i class="fas fa-paper-plane"></i> Send Broadcast</button>
+      </div>
+      <div class="card">
+        <h2 class="card-title"><i class="fas fa-coins"></i> Manual Coin Adjustment</h2>
+        <div id="coinAdjustmentSuccess" style="display:none" class="success-message"></div>
+        <input type="text" id="adjustCoinUserId" placeholder="Customer Firebase UID" style="width:100%;margin-bottom:10px;padding:12px">
+        <input type="number" id="adjustCoinAmount" placeholder="Coins (+/-)" style="width:100%;margin-bottom:10px;padding:12px">
+        <input type="text" id="adjustCoinNote" placeholder="Reason" style="width:100%;margin-bottom:10px;padding:12px">
+        <button type="button" class="btn" id="adjustCoinBtn"><i class="fas fa-edit"></i> Adjust Coins</button>
       </div>
 
       <div class="card">
@@ -4978,6 +5001,29 @@
       } catch (error) { showMessage('referralConfigSuccess', error.message, 'error'); }
     }
     document.getElementById('saveReferralConfigBtn')?.addEventListener('click', saveReferralConfig);
+
+    async function adminPost(path, body) {
+      const token = await window.auth.currentUser.getIdToken();
+      const response = await fetch(path, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify(body) });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error || 'Request failed');
+      return result;
+    }
+    document.getElementById('broadcastBtn')?.addEventListener('click', async () => {
+      try { const result = await adminPost('/api/admin/broadcast', { title: document.getElementById('broadcastTitle').value, message: document.getElementById('broadcastMessage').value }); showMessage('broadcastSuccess', `Sent to ${result.sent} customer(s).`, 'success'); } catch (error) { showMessage('broadcastSuccess', error.message, 'error'); }
+    });
+    document.getElementById('adjustCoinBtn')?.addEventListener('click', async () => {
+      try { const result = await adminPost('/api/admin/coins/adjust', { userId: document.getElementById('adjustCoinUserId').value, amount: Number(document.getElementById('adjustCoinAmount').value), note: document.getElementById('adjustCoinNote').value }); showMessage('coinAdjustmentSuccess', `Customer now has ${result.coins} coins.`, 'success'); } catch (error) { showMessage('coinAdjustmentSuccess', error.message, 'error'); }
+    });
+    document.getElementById('updateTicketBtn')?.addEventListener('click', async () => {
+      try {
+        const token = await window.auth.currentUser.getIdToken();
+        const response = await fetch('/api/admin/support-tickets', { method: 'PUT', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ userId: document.getElementById('ticketUserId').value, ticketId: document.getElementById('ticketId').value, status: document.getElementById('ticketStatus').value, priority: document.getElementById('ticketPriority').value }) });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || 'Could not update ticket');
+        window.showNotification('Support ticket updated.');
+      } catch (error) { window.showNotification(error.message, 'error'); }
+    });
 
     async function loadOperations(path) {
       const output = document.getElementById('operationsOutput');

@@ -23,6 +23,7 @@ loadEnv(path.join(process.cwd(), '.env.local'));
 loadEnv(path.join(process.cwd(), '.env'));
 
 const email = process.argv[2];
+const role = process.argv[3] || 'owner';
 if (!email) {
   console.error('Usage: node scripts/set-admin-claim.js admin@example.com');
   process.exit(1);
@@ -42,8 +43,8 @@ if (!serviceAccountJson) {
   });
   const user = await admin.auth().getUserByEmail(email);
   const existing = user.customClaims || {};
-  await admin.auth().setCustomUserClaims(user.uid, { ...existing, admin: true });
-  console.log(`Admin claim set for ${user.email} (${user.uid}). Sign out and sign back in to refresh the ID token.`);
+  await admin.auth().setCustomUserClaims(user.uid, { ...existing, admin: true, role });
+  console.log(`Admin claim set for ${user.email} (${user.uid}) with role ${role}. Sign out and sign back in to refresh the ID token.`);
 })().catch(error => {
   console.error(error.code || error.message);
   process.exit(1);
