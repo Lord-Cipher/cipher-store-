@@ -28,6 +28,12 @@ https://ozhejjbfmltmimmzwpdv.supabase.co/auth/v1/callback
 
 Also add the local and Render origins under **Authentication → URL Configuration → Redirect URLs**, for example `http://localhost:8787/**` and `https://your-render-host.onrender.com/**`.
 
+## Branded email verification and deliverability
+
+Email/password signup uses a six-digit OTP. The verification screen is branded **CIPHER TECH STORE** and accepts the code sent by Supabase Auth. In **Authentication → Email Templates → Confirm signup**, use a subject such as `CIPHER TECH STORE email verification` and include `{{ .Token }}` in the message. Do not remove the token placeholder or the code cannot be verified.
+
+No application can guarantee that a message will never enter spam. To improve delivery, configure a custom SMTP provider and a branded sender address such as `no-reply@yourdomain.com`, then publish the provider’s SPF and DKIM DNS records. Add a DMARC policy after SPF and DKIM pass, use a verified sending domain, keep the sender name as `CIPHER TECH STORE`, and avoid sending from a free mailbox address. Test with Gmail, Outlook, and Yahoo before production.
+
 ## Run locally
 
 ```bash

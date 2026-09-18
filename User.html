@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Shop - Premium Store</title>
+  <title>CIPHER TECH STORE</title>
   <link rel="manifest" href="/manifest.webmanifest">
   <meta name="theme-color" content="#0a0a0a">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -2788,6 +2788,12 @@
           Already have an account? <span style="color: #00ffff; cursor: pointer; font-weight: bold;" onclick="switchToLogin()">Login</span>
         </p>
       </div>
+      <div id="signupVerificationForm" style="display:none;">
+        <div style="text-align:center;margin-bottom:16px;color:#b8c4d9;">CIPHER TECH STORE sent a 6-digit verification code to your email. Enter it below to finish creating your account.</div>
+        <div class="input-group"><label><i class="fas fa-shield-alt"></i> Email verification code</label><input type="text" id="signupVerificationCode" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="123456"></div>
+        <button class="btn btn-full" onclick="verifySignupCode()"><i class="fas fa-check-circle"></i> Verify email and create account</button>
+        <p style="text-align:center;margin-top:14px;color:#999;">Didn't receive it? Check spam, then <span style="color:#00ffff;cursor:pointer;font-weight:bold;" onclick="resendSignupCode()">resend code</span>.</p>
+      </div>
     </div>
   </div>
 
@@ -2924,6 +2930,8 @@
     window.authSignIn = async (_, email, password) => { const { data, error } = await supabase.auth.signInWithPassword({ email, password }); if (error) throw error; return { user: data.user }; };
     window.authSignOut = async () => supabase.auth.signOut();
     window.authSignInWithProvider = async provider => { const { error } = await supabase.auth.signInWithOAuth({ provider, options: { redirectTo: `${window.location.origin}${window.location.pathname}` } }); if (error) throw error; };
+    window.authSendSignupCode = async (email, name, password) => { sessionStorage.setItem('cipherPendingSignup', JSON.stringify({ email, name, password })); const { error } = await supabase.auth.signInWithOtp({ email, options: { shouldCreateUser: true, data: { display_name: name }, emailRedirectTo: `${window.location.origin}${window.location.pathname}` } }); if (error) throw error; };
+    window.authVerifySignupCode = async code => { const pending = JSON.parse(sessionStorage.getItem('cipherPendingSignup') || 'null'); if (!pending) throw new Error('Your signup session expired. Please start again.'); const { data, error } = await supabase.auth.verifyOtp({ email: pending.email, token: code, type: 'email' }); if (error) throw error; const { error: passwordError } = await supabase.auth.updateUser({ password: pending.password, data: { display_name: pending.name } }); if (passwordError) throw passwordError; sessionStorage.removeItem('cipherPendingSignup'); return { user: data.user, ...pending }; };
     window.authUpdateProfile = async (user, profile) => supabase.auth.updateUser({ data: { display_name: profile.displayName } });
     window.currentUser = null; window.allProducts = []; window.currentProduct = null; window.cart = []; window.appliedCoupon = null; window.currentFilter = 'all'; window.confirmCallback = null;
     const updateUser = user => { window.currentUser = user ? { ...user, uid: user.id, displayName: user.user_metadata?.display_name || user.email, getIdToken: async () => (await supabase.auth.getSession()).data.session?.access_token } : null; updateMenu(); loadProducts(); loadCartFromStorage(); if (window.currentUser) { loadChatMessages(); setTimeout(handlePaymentReturn, 350); } };
@@ -4908,12 +4916,14 @@ Once payment is completed, the download link for your purchased digital item (HT
     function switchToSignup() {
       document.getElementById('authTitle').innerHTML = '<i class="fas fa-user-plus"></i> Sign Up';
       document.getElementById('loginForm').style.display = 'none';
+      document.getElementById('signupVerificationForm').style.display = 'none';
       document.getElementById('signupForm').style.display = 'block';
     }
 
     function switchToLogin() {
       document.getElementById('authTitle').innerHTML = '<i class="fas fa-sign-in-alt"></i> Login';
       document.getElementById('signupForm').style.display = 'none';
+      document.getElementById('signupVerificationForm').style.display = 'none';
       document.getElementById('loginForm').style.display = 'block';
     }
 
@@ -4986,56 +4996,34 @@ Once payment is completed, the download link for your purchased digital item (HT
         showNotification('Password must be at least 6 characters', 'error');
         return;
       }
-
       try {
-        showLoading('Creating account...');
-        const userCredential = await window.authCreateUser(window.auth, email, password);
-        await window.authUpdateProfile(userCredential.user, { displayName: name });
-
-        // Create user profile in database
-        await window.dbSet(window.dbRef(window.db, `users/${userCredential.user.uid}/profile`), {
-          name: name,
-          email: email,
-          createdAt: new Date().toISOString()
-        });
-
-        const referralCode = new URLSearchParams(window.location.search).get('ref') || localStorage.getItem('cipherReferralCode');
-        if (referralCode) {
-          try {
-            await apiRequest('/api/member/referral-code', { method: 'POST', body: JSON.stringify({ code: referralCode }) });
-            localStorage.removeItem('cipherReferralCode');
-          } catch (referralError) {
-            console.warn('Referral could not be applied automatically:', referralError.message);
-          }
-        }
-
+        showLoading('Sending verification code...');
+        await window.authSendSignupCode(email, name, password);
         hideLoading();
-
-        closeModal('authModal');
-
-        document.getElementById('signupName').value = '';
-        document.getElementById('signupEmail').value = '';
-        document.getElementById('signupPassword').value = '';
-
-        showNotification(`Welcome to our store, ${name}!`, 'success');
+        document.getElementById('signupForm').style.display = 'none';
+        document.getElementById('signupVerificationForm').style.display = 'block';
+        showNotification(`Verification code sent to ${email}`, 'success');
       } catch (error) {
         hideLoading();
         console.error('Signup error:', error);
-
-        let errorMsg = 'Signup failed';
-        if (error.code === 'auth/email-already-in-use') {
-          errorMsg = 'This email is already registered';
-        } else if (error.code === 'auth/invalid-email') {
-          errorMsg = 'Invalid email format';
-        } else if (error.code === 'auth/weak-password') {
-          errorMsg = 'Password is too weak';
-        } else {
-          errorMsg = error.message;
-        }
-
-        showNotification(errorMsg, 'error');
+        showNotification(error.message || 'Could not send verification code', 'error');
       }
     }
+
+    async function verifySignupCode() {
+      const code = document.getElementById('signupVerificationCode').value.trim();
+      if (!/^\d{6}$/.test(code)) return showNotification('Enter the 6-digit code from your email', 'error');
+      try {
+        showLoading('Verifying your email...');
+        const result = await window.authVerifySignupCode(code);
+        await window.dbSet(window.dbRef(window.db, `users/${result.user.id}/profile`), { name: result.name, email: result.email, createdAt: new Date().toISOString() });
+        const referralCode = new URLSearchParams(window.location.search).get('ref') || localStorage.getItem('cipherReferralCode');
+        if (referralCode) { try { await apiRequest('/api/member/referral-code', { method: 'POST', body: JSON.stringify({ code: referralCode }) }); localStorage.removeItem('cipherReferralCode'); } catch (error) { console.warn('Referral could not be applied:', error.message); } }
+        hideLoading(); closeModal('authModal'); document.getElementById('signupVerificationForm').style.display = 'none'; document.getElementById('signupVerificationCode').value = ''; document.getElementById('signupName').value = ''; document.getElementById('signupEmail').value = ''; document.getElementById('signupPassword').value = ''; showNotification(`Welcome to CIPHER TECH STORE, ${result.name}!`, 'success');
+      } catch (error) { hideLoading(); showNotification(error.message || 'Verification failed', 'error'); }
+    }
+
+    async function resendSignupCode() { const pending = JSON.parse(sessionStorage.getItem('cipherPendingSignup') || 'null'); if (!pending) return showNotification('Please start signup again', 'error'); try { await window.authSendSignupCode(pending.email, pending.name, pending.password); showNotification('A new verification code was sent', 'success'); } catch (error) { showNotification(error.message, 'error'); } }
 
     async function logoutUser() {
       try {
