@@ -4111,9 +4111,9 @@
           </div>
         </div>
         <div class="btn-group">
-          <button class="btn-small" style="background: linear-gradient(135deg, #00ffff, #a855f7); color: #000;" data-copy-code="${escapeHtml(coupon.code)}"><i class="fas fa-copy"></i> Copy</button>
-          <button class="btn-small btn-edit" data-edit-coupon="${id}"><i class="fas fa-edit"></i> Edit</button>
-          <button class="btn-small btn-delete" data-delete-coupon="${id}"><i class="fas fa-trash"></i> Delete</button>
+          <button type="button" class="btn-small" style="background: linear-gradient(135deg, #00ffff, #a855f7); color: #000;" data-copy-code="${escapeHtml(coupon.code)}"><i class="fas fa-copy"></i> Copy</button>
+          <button type="button" class="btn-small btn-edit" data-edit-coupon="${id}"><i class="fas fa-edit"></i> Edit</button>
+          <button type="button" class="btn-small btn-delete" data-delete-coupon="${id}"><i class="fas fa-trash"></i> Delete</button>
         </div>
       `;
 
@@ -4269,21 +4269,32 @@
     }
 
     async function deleteCoupon(id) {
-      if (confirm('⚠️ Are you sure you want to delete this coupon? This action cannot be undone.')) {
-        try {
-          window.showLoadingOverlay('Deleting coupon...');
-          const snapshot = await window.dbGet(window.dbRef(window.db, `coupons/${id}`));
-          const couponCode = snapshot.exists() ? snapshot.val().code : 'Unknown';
-          
-          await window.dbRemove(window.dbRef(window.db, `coupons/${id}`));
-          showMessage('couponSuccess', '🗑️ Coupon deleted successfully!', 'success');
-          loadCoupons();
-          window.hideLoadingOverlay();
-          window.showNotification('🗑️ Coupon deleted!');
-        } catch (error) {
-          window.hideLoadingOverlay();
-          alert('Error deleting coupon: ' + error.message);
+      const coupon = allCoupons.find(item => item.id === id);
+      const couponCode = coupon?.code || id;
+      if (!id) {
+        window.showNotification('Could not identify this coupon.', 5000);
+        return;
+      }
+      if (!confirm(`Delete coupon "${couponCode}"? This action cannot be undone.`)) return;
+
+      const deleteButton = document.querySelector(`[data-delete-coupon="${CSS.escape(id)}"]`);
+      try {
+        if (deleteButton) {
+          deleteButton.disabled = true;
+          deleteButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Deleting...';
         }
+        window.showLoadingOverlay('Deleting coupon...');
+        await window.dbRemove(window.dbRef(window.db, `coupons/${id}`));
+        allCoupons = allCoupons.filter(item => item.id !== id);
+        displayCoupons(allCoupons);
+        showMessage('couponSuccess', `Coupon "${couponCode}" deleted successfully.`, 'success');
+        window.showNotification('Coupon deleted!');
+      } catch (error) {
+        console.error('Error deleting coupon:', error);
+        showMessage('couponSuccess', `Unable to delete coupon: ${error.message || 'Firebase rejected the request.'}`, 'error');
+        window.showNotification('Coupon deletion failed.', 5000);
+      } finally {
+        window.hideLoadingOverlay();
       }
     }
 
