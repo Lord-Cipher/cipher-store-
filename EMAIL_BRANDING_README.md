@@ -18,6 +18,24 @@ CIPHER TECH STORE <no-reply@yourdomain.com>
 
 Replace `yourdomain.com` with a domain that you own and have verified. The Supabase default mail service may continue to display Supabase branding and is intended for development rather than dependable production delivery.
 
+### Create the SMTP account with Resend
+
+If you do not have an SMTP account, create one at [Resend](https://resend.com). Create an API key under **API Keys**, then add and verify a domain under **Domains**. Resend will provide DNS records. Publish those records at your domain registrar before using the domain as a sender.
+
+In Supabase’s **SMTP Settings** form, enter these values:
+
+| Supabase field | Value |
+|---|---|
+| Enable custom SMTP | On |
+| Sender email | `no-reply@YOUR-VERIFIED-DOMAIN.com` |
+| Sender name | `CIPHER TECH STORE` |
+| Host | `smtp.resend.com` |
+| Port | `465` |
+| Username | `resend` |
+| Password | Your Resend API key, beginning with `re_` |
+
+Resend documents these SMTP values as Host `smtp.resend.com`, Port `465`, Username `resend`, and Password equal to the API key. Do not place the Resend API key in the repository, an HTML file, or a browser field. Paste it only into Supabase’s private SMTP password field.
+
 Next, go to **Authentication → Email Templates** and edit the templates used for:
 
 - Confirm signup or email OTP.
@@ -38,6 +56,24 @@ The HTML templates must include the following token placeholder:
 ```
 
 The application verifies this six-digit token with Supabase `verifyOtp`. Removing the placeholder prevents code-based verification from working.
+
+For the **Confirm signup** and **Magic link or OTP** templates, use this description and image structure. Replace `https://YOUR-RENDER-DOMAIN` with the real HTTPS Render URL if `{{ .SiteURL }}` is not configured to point to Render:
+
+```html
+<div style="font-family:Arial,sans-serif;max-width:560px;margin:auto;padding:28px;color:#0f172a">
+  <div style="background:#071436;padding:24px;text-align:center;border-radius:12px 12px 0 0">
+    <img src="https://YOUR-RENDER-DOMAIN/assets/cipher-tech-logo.png" alt="CIPHER TECH STORE" width="150">
+  </div>
+  <div style="border:1px solid #e2e8f0;border-top:0;padding:28px;border-radius:0 0 12px 12px">
+    <h1>Welcome to CIPHER TECH STORE</h1>
+    <p>Thanks for creating your account in our secure digital tools marketplace. Verify your email with the one-time code below:</p>
+    <div style="font-size:34px;letter-spacing:8px;font-weight:bold;color:#0284c7;padding:18px 0">{{ .Token }}</div>
+    <p style="color:#64748b">This code is for one-time use. If you did not request it, you can ignore this message.</p>
+  </div>
+</div>
+```
+
+For the **Reset password** or recovery OTP template, keep the same image and replace the description with: `Use the one-time code below to securely reset your CIPHER TECH STORE password.` Set the subject to `CIPHER TECH STORE password recovery code` and keep `{{ .Token }}`.
 
 ## Where the logo is changed
 
