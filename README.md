@@ -71,3 +71,7 @@ Supported roles include `owner`, `admin`, and `manager`. The user must sign out 
 Set the following private Render variables: `OXAPAY_MERCHANT_API_KEY`, `PUBLIC_BASE_URL`, `ALLOWED_ORIGIN`, `SUPABASE_URL`, `SUPABASE_ANON_KEY`, and `SUPABASE_SERVICE_ROLE_KEY`. Keep `OXAPAY_SANDBOX=true` until a complete sandbox payment and webhook test succeeds. Configure OxaPay’s callback URL as `${PUBLIC_BASE_URL}/api/oxapay/webhook`.
 
 Before production, verify authentication, product reads, admin writes, payment callbacks, exact-amount rejection, library downloads, referral coins, gift cards, broadcasts, and support tickets against the live Supabase project.
+
+## Purchase receipt emails
+
+Paid and free purchases create an in-app notification and can also send a branded, Stripe-style HTML receipt through Resend. Configure `RESEND_API_KEY` and a verified sender in `RESEND_FROM_EMAIL` in Render. The receipt includes the CIPHER TECH STORE logo, purchased products, discount, total paid, payment method, order references, timestamp, and a purchase-library link. If Resend is not configured, purchases still complete normally and the failure is written to the audit log rather than blocking access.

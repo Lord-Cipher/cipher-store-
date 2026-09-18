@@ -66,6 +66,23 @@ function safeString(value, maxLength = 500) {
   return String(value ?? '').trim().slice(0, maxLength);
 }
 
+function emailHtml(value) {
+  return safeString(value, 20000).replace(/[&<>"']/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[character]));
+}
+
+async function sendPurchaseReceiptEmail({ email, items, total, discountAmount = 0, orderIds, paymentProvider = 'oxapay', purchasedAt }) {
+  const apiKey = process.env.RESEND_API_KEY;
+  const from = process.env.RESEND_FROM_EMAIL || 'CIPHER TECH STORE <receipts@resend.dev>';
+  if (!apiKey || !email) return { skipped: true, reason: 'email_provider_not_configured' };
+  const logoUrl = `${PUBLIC_BASE_URL || 'http://localhost:8787'}/assets/cipher-tech-logo.png`;
+  const rows = (items || []).map(item => `<tr><td style="padding:14px 0;border-bottom:1px solid #e5e7eb"><strong>${emailHtml(item.title)}</strong><br><span style="color:#64748b;font-size:13px">Digital tool</span></td><td style="padding:14px 0;border-bottom:1px solid #e5e7eb;text-align:right">$${Number(item.discountedPrice || 0).toFixed(2)}</td></tr>`).join('');
+  const totalText = Number(total || 0).toFixed(2);
+  const html = `<!doctype html><html><body style="margin:0;background:#f1f5f9;font-family:Arial,sans-serif;color:#0f172a"><div style="max-width:640px;margin:30px auto;background:#fff;border-radius:14px;overflow:hidden;box-shadow:0 8px 30px rgba(15,23,42,.12)"><div style="padding:28px;text-align:center;background:#071436"><img src="${emailHtml(logoUrl)}" alt="CIPHER TECH STORE" width="150" style="max-width:150px;height:auto"><h1 style="color:#fff;font-size:22px;margin:18px 0 6px">Payment receipt</h1><p style="color:#a5b4fc;margin:0">Thank you for your purchase</p></div><div style="padding:30px"><p style="font-size:16px">Your payment was confirmed by <strong>CIPHER TECH STORE</strong>.</p><table role="presentation" style="width:100%;border-collapse:collapse">${rows}</table><table role="presentation" style="width:100%;margin-top:18px;border-collapse:collapse"><tr><td style="padding:7px 0;color:#64748b">Discount</td><td style="padding:7px 0;text-align:right;color:#16a34a">-$${Number(discountAmount || 0).toFixed(2)}</td></tr><tr><td style="padding:12px 0;font-size:20px;font-weight:bold;border-top:2px solid #0f172a">Total paid</td><td style="padding:12px 0;text-align:right;font-size:20px;font-weight:bold;border-top:2px solid #0f172a">$${totalText}</td></tr></table><p style="color:#64748b;font-size:13px;margin-top:24px">Payment method: ${emailHtml(paymentProvider.toUpperCase())}<br>Order reference: ${emailHtml((orderIds || []).join(', '))}<br>${emailHtml(new Date(purchasedAt || Date.now()).toLocaleString())}</p><a href="${emailHtml(PUBLIC_BASE_URL || '#')}/User.html" style="display:inline-block;margin-top:12px;padding:13px 20px;background:#0ea5e9;color:#fff;text-decoration:none;border-radius:8px;font-weight:bold">Open purchase library</a></div><div style="padding:18px 30px;background:#f8fafc;color:#64748b;font-size:12px;text-align:center">CIPHER TECH STORE · Secure digital tools marketplace</div></div></body></html>`;
+  const response = await fetch('https://api.resend.com/emails', { method: 'POST', headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ from, to: [email], subject: `CIPHER TECH STORE receipt · $${totalText}`, html }) });
+  if (!response.ok) throw new Error(`Receipt email provider returned HTTP ${response.status}`);
+  return { sent: true };
+}
+
 function enforceRateLimit(req, bucket, limit) {
   const now = Date.now();
   const address = safeString(req.socket?.remoteAddress || 'unknown', 120);
@@ -464,7 +481,7 @@ async function createInvoice(user, body) {
       orderId: getDatabase().ref('orders').push().key,
       productId,
       title: safeString(product.title, 200),
-      description: safeString(product.description, 500),
+      description: safeString(product.description, 10000),
       imageUrl: safeString(product.imageUrl, 2000),
       downloadLink: safeString(product.downloadLink, 2000),
       discountedPrice: price,
@@ -700,6 +717,7 @@ async function finalizePaidSession(sessionId, gatewayPayload = {}, source = 'web
   await db.ref().update(updates);
   if (session.creditCents) await consumeCreditReservation(session.userId, sessionId).catch(() => {});
   await awardPurchaseRewards(session.userId, session.items?.[0]?.orderId || sessionId);
+  await sendPurchaseReceiptEmail({ email: session.userEmail, items: session.items, total: session.total, discountAmount: session.discountAmount, orderIds: session.items.map(item => item.orderId), paymentProvider: 'oxapay', purchasedAt }).catch(error => writeAudit({ uid: session.userId, email: session.userEmail }, 'receipt_email_failed', { sessionId, message: error.message }));
   return updates[`paymentSessions/${sessionId}`];
 }
 
@@ -786,9 +804,9 @@ async function claimFreeProduct(user, body) {
   const orderId = getDatabase().ref('orders').push().key;
   const purchasedAt = new Date().toISOString();
   const order = {
-    productId,
-    userId: user.uid,
-    userEmail: safeString(user.email, 320),
+      productId,
+      userId: user.uid,
+      userEmail: safeString(user.email, 320),
     amountPaid: 0,
     finalAmount: 0,
     orderTotal: 0,
@@ -796,7 +814,7 @@ async function claimFreeProduct(user, body) {
     paymentStatus: 'not_required',
     productSnapshot: {
       title: safeString(product.title, 200),
-      description: safeString(product.description, 500),
+      description: safeString(product.description, 10000),
       imageUrl: safeString(product.imageUrl, 2000),
       downloadLink: safeString(product.downloadLink, 2000),
       discountedPrice: 0,
@@ -820,6 +838,7 @@ async function claimFreeProduct(user, body) {
     }
   };
   await getDatabase().ref().update(updates);
+  await sendPurchaseReceiptEmail({ email: user.email, items: [{ title: product.title, discountedPrice: 0 }], total: 0, orderIds: [orderId], paymentProvider: 'free', purchasedAt }).catch(error => writeAudit(user, 'receipt_email_failed', { orderId, message: error.message }));
   return { alreadyOwned: false, orderId };
 }
 
