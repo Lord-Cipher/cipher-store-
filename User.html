@@ -2763,6 +2763,7 @@
           <i class="fas fa-sign-in-alt"></i> Login
         </button>
         <div style="display:flex;gap:8px;margin-top:10px;"><button class="btn btn-small" onclick="loginWithProvider('google')"><i class="fab fa-google"></i> Google</button><button class="btn btn-small" onclick="loginWithProvider('github')"><i class="fab fa-github"></i> GitHub</button></div>
+        <p style="text-align:center;margin-top:12px;color:#00ffff;cursor:pointer;font-weight:bold;" onclick="showRecoveryForm()">Forgot password? Recover with email OTP</p>
         <p style="text-align: center; margin-top: 15px; color: #999;">
           Don't have an account? <span style="color: #00ffff; cursor: pointer; font-weight: bold;" onclick="switchToSignup()">Sign up</span>
         </p>
@@ -2793,6 +2794,13 @@
         <div class="input-group"><label><i class="fas fa-shield-alt"></i> Email verification code</label><input type="text" id="signupVerificationCode" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="123456"></div>
         <button class="btn btn-full" onclick="verifySignupCode()"><i class="fas fa-check-circle"></i> Verify email and create account</button>
         <p style="text-align:center;margin-top:14px;color:#999;">Didn't receive it? Check spam, then <span style="color:#00ffff;cursor:pointer;font-weight:bold;" onclick="resendSignupCode()">resend code</span>.</p>
+      </div>
+      <div id="recoveryForm" style="display:none;">
+        <div style="text-align:center;margin-bottom:16px;color:#b8c4d9;">CIPHER TECH STORE will send a one-time code to your email. Enter it to create a new password.</div>
+        <div class="input-group"><label><i class="fas fa-envelope"></i> Account email</label><input type="email" id="recoveryEmail" autocomplete="email" placeholder="your@email.com"></div>
+        <button class="btn btn-full" id="sendRecoveryCodeBtn" onclick="sendRecoveryCode()"><i class="fas fa-paper-plane"></i> Send recovery OTP</button>
+        <div id="recoveryCodeFields" style="display:none;margin-top:14px;"><div class="input-group"><label><i class="fas fa-shield-alt"></i> One-time code</label><input type="text" id="recoveryCode" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="123456"></div><div class="input-group"><label><i class="fas fa-lock"></i> New password</label><input type="password" id="recoveryPassword" autocomplete="new-password" minlength="6" placeholder="At least 6 characters"></div><button class="btn btn-full" onclick="completePasswordRecovery()"><i class="fas fa-key"></i> Set new password</button></div>
+        <p style="text-align:center;margin-top:14px;color:#999;">Remembered your password? <span style="color:#00ffff;cursor:pointer;font-weight:bold;" onclick="switchToLogin()">Back to login</span></p>
       </div>
     </div>
   </div>
@@ -2932,6 +2940,8 @@
     window.authSignInWithProvider = async provider => { const { error } = await supabase.auth.signInWithOAuth({ provider, options: { redirectTo: `${window.location.origin}${window.location.pathname}` } }); if (error) throw error; };
     window.authSendSignupCode = async (email, name, password) => { sessionStorage.setItem('cipherPendingSignup', JSON.stringify({ email, name, password })); const { error } = await supabase.auth.signInWithOtp({ email, options: { shouldCreateUser: true, data: { display_name: name }, emailRedirectTo: `${window.location.origin}${window.location.pathname}` } }); if (error) throw error; };
     window.authVerifySignupCode = async code => { const pending = JSON.parse(sessionStorage.getItem('cipherPendingSignup') || 'null'); if (!pending) throw new Error('Your signup session expired. Please start again.'); const { data, error } = await supabase.auth.verifyOtp({ email: pending.email, token: code, type: 'email' }); if (error) throw error; const { error: passwordError } = await supabase.auth.updateUser({ password: pending.password, data: { display_name: pending.name } }); if (passwordError) throw passwordError; sessionStorage.removeItem('cipherPendingSignup'); return { user: data.user, ...pending }; };
+    window.authSendRecoveryCode = async email => { sessionStorage.setItem('cipherRecoveryEmail', email); const { error } = await supabase.auth.signInWithOtp({ email, options: { shouldCreateUser: false } }); if (error) throw error; };
+    window.authVerifyRecoveryCode = async (code, password) => { const email = sessionStorage.getItem('cipherRecoveryEmail'); if (!email) throw new Error('Your recovery session expired. Please request a new code.'); const { data, error } = await supabase.auth.verifyOtp({ email, token: code, type: 'email' }); if (error) throw error; const { error: passwordError } = await supabase.auth.updateUser({ password }); if (passwordError) throw passwordError; sessionStorage.removeItem('cipherRecoveryEmail'); return data.user; };
     window.authUpdateProfile = async (user, profile) => supabase.auth.updateUser({ data: { display_name: profile.displayName } });
     window.currentUser = null; window.allProducts = []; window.currentProduct = null; window.cart = []; window.appliedCoupon = null; window.currentFilter = 'all'; window.confirmCallback = null;
     const updateUser = user => { window.currentUser = user ? { ...user, uid: user.id, displayName: user.user_metadata?.display_name || user.email, getIdToken: async () => (await supabase.auth.getSession()).data.session?.access_token } : null; updateMenu(); loadProducts(); loadCartFromStorage(); if (window.currentUser) { loadChatMessages(); setTimeout(handlePaymentReturn, 350); } };
@@ -4917,6 +4927,7 @@ Once payment is completed, the download link for your purchased digital item (HT
       document.getElementById('authTitle').innerHTML = '<i class="fas fa-user-plus"></i> Sign Up';
       document.getElementById('loginForm').style.display = 'none';
       document.getElementById('signupVerificationForm').style.display = 'none';
+      document.getElementById('recoveryForm').style.display = 'none';
       document.getElementById('signupForm').style.display = 'block';
     }
 
@@ -4924,6 +4935,7 @@ Once payment is completed, the download link for your purchased digital item (HT
       document.getElementById('authTitle').innerHTML = '<i class="fas fa-sign-in-alt"></i> Login';
       document.getElementById('signupForm').style.display = 'none';
       document.getElementById('signupVerificationForm').style.display = 'none';
+      document.getElementById('recoveryForm').style.display = 'none';
       document.getElementById('loginForm').style.display = 'block';
     }
 
@@ -4975,6 +4987,24 @@ Once payment is completed, the download link for your purchased digital item (HT
 
     async function loginWithProvider(provider) {
       try { await window.authSignInWithProvider(provider); } catch (error) { showNotification(error.message || `Could not sign in with ${provider}`, 'error'); }
+    }
+
+    function showRecoveryForm() {
+      document.getElementById('authTitle').innerHTML = '<i class="fas fa-key"></i> Recover CIPHER TECH STORE account';
+      document.getElementById('loginForm').style.display = 'none'; document.getElementById('signupForm').style.display = 'none'; document.getElementById('signupVerificationForm').style.display = 'none'; document.getElementById('recoveryForm').style.display = 'block';
+    }
+
+    async function sendRecoveryCode() {
+      const email = document.getElementById('recoveryEmail').value.trim();
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return showNotification('Enter a valid account email', 'error');
+      try { showLoading('Sending recovery OTP...'); await window.authSendRecoveryCode(email); hideLoading(); document.getElementById('recoveryCodeFields').style.display = 'block'; showNotification('Recovery code sent. Check your email.', 'success'); } catch (error) { hideLoading(); showNotification(error.message || 'Could not send recovery code', 'error'); }
+    }
+
+    async function completePasswordRecovery() {
+      const code = document.getElementById('recoveryCode').value.trim(); const password = document.getElementById('recoveryPassword').value;
+      if (!/^\d{6}$/.test(code)) return showNotification('Enter the 6-digit recovery code', 'error');
+      if (password.length < 6) return showNotification('New password must be at least 6 characters', 'error');
+      try { showLoading('Updating your password...'); await window.authVerifyRecoveryCode(code, password); hideLoading(); closeModal('authModal'); showNotification('Password updated. You can now log in.', 'success'); } catch (error) { hideLoading(); showNotification(error.message || 'Could not update password', 'error'); }
     }
 
     async function signupUser() {
