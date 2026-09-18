@@ -145,6 +145,24 @@ async function requireUser(req) {
   }
 }
 
+async function requireAdmin(req) {
+  const user = await requireUser(req);
+  if (user.admin !== true) {
+    throw Object.assign(new Error('Administrator access required'), { statusCode: 403, code: 'admin_required' });
+  }
+  return user;
+}
+
+async function writeAudit(user, action, details = {}) {
+  await getDatabase().ref('auditLogs').push({
+    actorId: user.uid,
+    actorEmail: safeString(user.email, 320),
+    action: safeString(action, 120),
+    details,
+    createdAt: new Date().toISOString()
+  });
+}
+
 function getProductsRef() {
   return getDatabase().ref('products');
 }
@@ -1135,6 +1153,103 @@ async function downloadOwnedFile(req, res, orderId) {
   res.end(buffer);
 }
 
+function normalizeCode(value) {
+  return safeString(value, 80).toUpperCase().replace(/[^A-Z0-9-]/g, '');
+}
+
+async function createGiftCard(user, body) {
+  const amountCents = cents(body.amount);
+  if (!Number.isInteger(amountCents) || amountCents < 100 || amountCents > 10000000) {
+    throw Object.assign(new Error('Gift card amount must be between $1 and $100,000'), { statusCode: 400 });
+  }
+  const code = normalizeCode(body.code) || `CIPHER-${crypto.randomBytes(6).toString('hex').toUpperCase()}`;
+  if (code.length < 6) throw Object.assign(new Error('Gift card code is too short'), { statusCode: 400 });
+  const ref = getDatabase().ref(`giftCards/${code}`);
+  const result = await ref.transaction(current => {
+    if (current) return;
+    return {
+      code,
+      balanceCents: amountCents,
+      originalBalanceCents: amountCents,
+      active: true,
+      createdAt: new Date().toISOString(),
+      createdBy: user.uid,
+      expiresAt: body.expiresAt ? safeString(body.expiresAt, 40) : null
+    };
+  });
+  if (!result.committed) throw Object.assign(new Error('That gift card code already exists'), { statusCode: 409 });
+  await writeAudit(user, 'gift_card_created', { code, amountCents });
+  return { code, amount: amountCents / 100 };
+}
+
+async function redeemGiftCard(user, body) {
+  const code = normalizeCode(body.code);
+  if (!code) throw Object.assign(new Error('Gift card code is required'), { statusCode: 400 });
+  const cardRef = getDatabase().ref(`giftCards/${code}`);
+  const result = await cardRef.transaction(current => {
+    if (!current || current.active !== true || Number(current.balanceCents || 0) <= 0) return;
+    if (current.expiresAt && new Date(current.expiresAt).getTime() <= Date.now()) return;
+    return { ...current, active: false, redeemedBy: user.uid, redeemedAt: new Date().toISOString() };
+  });
+  if (!result.committed) throw Object.assign(new Error('This gift card is invalid, expired, or already redeemed'), { statusCode: 400 });
+  const amountCents = Number(result.snapshot.val().balanceCents || 0);
+  await getDatabase().ref(`users/${user.uid}/storeCreditsCents`).transaction(current => Number(current || 0) + amountCents);
+  await getDatabase().ref(`users/${user.uid}/giftCards`).push({ code, amountCents, redeemedAt: new Date().toISOString() });
+  await writeAudit(user, 'gift_card_redeemed', { code, amountCents });
+  return { amount: amountCents / 100 };
+}
+
+async function updateProductChangelog(user, productId, body) {
+  const entries = Array.isArray(body.entries) ? body.entries.slice(0, 50).map(entry => ({
+    version: safeString(entry.version, 40),
+    notes: safeString(entry.notes, 2000),
+    releasedAt: safeString(entry.releasedAt || new Date().toISOString(), 40)
+  })).filter(entry => entry.version && entry.notes) : [];
+  if (!productId || !entries.length) throw Object.assign(new Error('At least one changelog entry is required'), { statusCode: 400 });
+  const ref = getDatabase().ref(`products/${productId}/changelog`);
+  await ref.set(entries);
+  await writeAudit(user, 'product_changelog_updated', { productId, entryCount: entries.length });
+  return { productId, entries };
+}
+
+async function getRewardOverview(user) {
+  const db = getDatabase();
+  const [profileSnapshot, rewardsSnapshot, usersSnapshot] = await Promise.all([
+    db.ref(`users/${user.uid}/profile`).once('value'),
+    db.ref(`users/${user.uid}/rewards`).once('value'),
+    db.ref('users').once('value')
+  ]);
+  const profile = profileSnapshot.val() || {};
+  const rewards = rewardsSnapshot.val() || {};
+  const today = new Date().toISOString().slice(0, 10);
+  const lastDay = safeString(profile.lastLoginDay, 20);
+  let streak = Number(profile.loginStreak || 0);
+  if (lastDay !== today) {
+    const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+    streak = lastDay === yesterday ? streak + 1 : 1;
+    await db.ref(`users/${user.uid}/profile`).update({ loginStreak: streak, lastLoginDay: today });
+    await db.ref(`users/${user.uid}/rewards/points`).transaction(current => Number(current || 0) + 10);
+  }
+  const leaderboard = Object.entries(usersSnapshot.val() || []).map(([uid, value]) => ({
+    uid, displayName: safeString(value?.profile?.displayName || 'Customer', 80), points: Number(value?.rewards?.lifetimePoints || 0)
+  })).sort((a, b) => b.points - a.points).slice(0, 20);
+  return { streak, missions: [{ id: 'daily-login', title: 'Log in today', reward: 10, completed: lastDay === today }], points: Number(rewards.points || 0), leaderboard };
+}
+
+async function openMysteryBox(user) {
+  const rewards = [25, 50, 100, 250];
+  const reward = rewards[crypto.randomInt(rewards.length)];
+  const ref = getDatabase().ref(`users/${user.uid}/rewards`);
+  const result = await ref.transaction(current => {
+    const points = Number(current?.points || 0);
+    if (points < 50) return;
+    return { ...(current || {}), points: points - 50 + reward, lifetimePoints: Number(current?.lifetimePoints || 0) + reward, updatedAt: new Date().toISOString() };
+  });
+  if (!result.committed) throw Object.assign(new Error('You need at least 50 points to open a mystery box'), { statusCode: 409 });
+  await getDatabase().ref(`users/${user.uid}/rewardLedger`).push({ amount: reward - 50, reason: 'mystery_box', createdAt: new Date().toISOString() });
+  return { cost: 50, reward, points: Number(result.snapshot.val()?.points || 0) };
+}
+
 async function handleApi(req, res, pathname) {
   if (pathname === '/api/health' && req.method === 'GET') {
     return json(res, 200, { ok: true, paymentConfigured: Boolean(process.env.OXAPAY_MERCHANT_API_KEY), publicUrlConfigured: Boolean(PUBLIC_BASE_URL), firebaseConfigured: Boolean(process.env.FIREBASE_SERVICE_ACCOUNT_JSON || process.env.GOOGLE_APPLICATION_CREDENTIALS) });
@@ -1193,6 +1308,23 @@ async function handleApi(req, res, pathname) {
     return json(res, 201, await playRewardGame(await requireUser(req), await readJson(req)));
   }
 
+  if (pathname === '/api/rewards/overview' && req.method === 'GET') {
+    return json(res, 200, await getRewardOverview(await requireUser(req)));
+  }
+  if (pathname === '/api/rewards/mystery-box' && req.method === 'POST') {
+    return json(res, 201, await openMysteryBox(await requireUser(req)));
+  }
+  if (pathname === '/api/gift-cards/create' && req.method === 'POST') {
+    return json(res, 201, await createGiftCard(await requireAdmin(req), await readJson(req)));
+  }
+  if (pathname === '/api/gift-cards/redeem' && req.method === 'POST') {
+    return json(res, 201, await redeemGiftCard(await requireUser(req), await readJson(req)));
+  }
+  const changelogMatch = pathname.match(/^\/api\/admin\/products\/([^/]+)\/changelog$/);
+  if (changelogMatch && req.method === 'PUT') {
+    return json(res, 200, await updateProductChangelog(await requireAdmin(req), decodeURIComponent(changelogMatch[1]), await readJson(req)));
+  }
+
   const downloadMatch = pathname.match(/^\/api\/library\/download\/([^/]+)$/);
   if (downloadMatch && req.method === 'GET') {
     return downloadOwnedFile(req, res, decodeURIComponent(downloadMatch[1]));
@@ -1207,7 +1339,7 @@ function serveStatic(req, res, pathname) {
   const filePath = path.join(__dirname, relative);
   if (!fs.existsSync(filePath) || !fs.statSync(filePath).isFile()) return text(res, 404, 'Not found');
   const ext = path.extname(filePath).toLowerCase();
-  const type = ext === '.html' ? 'text/html; charset=utf-8' : ext === '.js' ? 'text/javascript; charset=utf-8' : 'application/octet-stream';
+  const type = ext === '.html' ? 'text/html; charset=utf-8' : ext === '.js' ? 'text/javascript; charset=utf-8' : ext === '.webmanifest' ? 'application/manifest+json' : 'application/octet-stream';
   res.writeHead(200, { 'Content-Type': type, 'Cache-Control': 'no-cache' });
   fs.createReadStream(filePath).pipe(res);
 }
@@ -1240,4 +1372,3 @@ if (require.main === module) {
 }
 
 module.exports = { server, roundMoney, cents, isExactAmount, isGatewayPaymentExact, getCouponDiscount, isPaidStatus, isPayingStatus, cleanupExpiredCoupons, getMemberOverview, listProductReviews, isExactAmount };
-

@@ -1,0 +1,14 @@
+{
+  "name": "Cipher Store",
+  "short_name": "Cipher Store",
+  "description": "Secure digital tools marketplace",
+  "start_url": "/User.html",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#0a0a0a",
+  "theme_color": "#0a0a0a",
+  "icons": [
+    { "src": "https://via.placeholder.com/192/0a0a0a/00ffff?text=C", "sizes": "192x192", "type": "image/png" },
+    { "src": "https://via.placeholder.com/512/0a0a0a/00ffff?text=C", "sizes": "512x512", "type": "image/png" }
+  ]
+}

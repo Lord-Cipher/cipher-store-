@@ -4,6 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Shop - Premium Store</title>
+  <link rel="manifest" href="/manifest.webmanifest">
+  <meta name="theme-color" content="#0a0a0a">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
     * {
@@ -3069,6 +3071,12 @@
           <div class="menu-item" onclick="showMemberHub()">
             <i class="fas fa-layer-group"></i> Member Hub
           </div>
+          <div class="menu-item" onclick="showRewardsOverview()">
+            <i class="fas fa-trophy"></i> Streaks & Leaderboard
+          </div>
+          <div class="menu-item" onclick="redeemGiftCardPrompt()">
+            <i class="fas fa-gift"></i> Redeem Gift Card
+          </div>
           <div class="menu-item" onclick="showBookmarks()">
             <i class="fas fa-bookmark"></i> Bookmarks
           </div>
@@ -3106,6 +3114,57 @@
             <i class="fas fa-sign-in-alt"></i> Login / Signup
           </div>
         `;
+      }
+    }
+
+    function showInfoModal(title, html) {
+      const modal = document.getElementById('memberHubModal');
+      if (!modal) return;
+      modal.querySelector('.modal-title').innerHTML = `<i class="fas fa-sparkles"></i> ${escapeHtml(title)}`;
+      document.getElementById('memberHubContent').innerHTML = html;
+      modal.classList.add('active');
+      document.body.style.overflow = 'hidden';
+    }
+
+    async function redeemGiftCardPrompt() {
+      if (!window.currentUser) return requireLogin('redeem a gift card');
+      const code = prompt('Enter your gift card code:');
+      if (!code) return;
+      try {
+        showLoading('Redeeming gift card...');
+        const result = await apiRequest('/api/gift-cards/redeem', { method: 'POST', body: JSON.stringify({ code }) });
+        hideLoading();
+        showNotification(`Gift card added ${formatCurrency(result.amount)} to your store credit.`, 'success');
+      } catch (error) {
+        hideLoading();
+        showNotification(error.message || 'Gift card redemption failed', 'error');
+      }
+    }
+
+    async function showRewardsOverview() {
+      if (!window.currentUser) return requireLogin('view your rewards');
+      try {
+        showLoading('Loading rewards...');
+        const data = await apiRequest('/api/rewards/overview');
+        hideLoading();
+        const leaders = (data.leaderboard || []).slice(0, 10).map((item, index) => `<div class="hub-muted">${index + 1}. ${escapeHtml(item.displayName)} — ${item.points} points</div>`).join('');
+        showInfoModal('Rewards & Leaderboard', `<div class="hub-card"><div class="hub-card-title"><i class="fas fa-fire"></i> Login streak</div><strong>${data.streak}</strong><span>consecutive day(s)</span></div><div class="hub-card"><div class="hub-card-title"><i class="fas fa-star"></i> Points</div><strong>${data.points}</strong><span>available reward points</span><button class="btn btn-small" onclick="openMysteryBox()">Open mystery box (50 points)</button></div><h3 style="color:#00ffff;margin-top:18px;">Leaderboard</h3>${leaders || '<p class="hub-muted">No leaderboard entries yet.</p>'}`);
+      } catch (error) {
+        hideLoading();
+        showNotification(error.message || 'Could not load rewards', 'error');
+      }
+    }
+
+    async function openMysteryBox() {
+      try {
+        showLoading('Opening mystery box...');
+        const result = await apiRequest('/api/rewards/mystery-box', { method: 'POST', body: '{}' });
+        hideLoading();
+        showNotification(`Mystery box reward: ${result.reward} points!`, 'success');
+        showRewardsOverview();
+      } catch (error) {
+        hideLoading();
+        showNotification(error.message || 'Could not open mystery box', 'error');
       }
     }
 
@@ -5684,6 +5743,11 @@ Once payment is completed, the download link for your purchased digital item (HT
       window.debugUser = () => console.log('User:', window.currentUser);
       window.debugProducts = () => console.log('Products:', window.allProducts);
       console.log('%c🐛 Debug mode enabled. Use debugCart(), debugUser(), debugProducts()', 'color: #ffa500;');
+    }
+  </script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => navigator.serviceWorker.register('/service-worker.js').catch(error => console.warn('Offline mode unavailable:', error)));
     }
   </script>
 </body>
