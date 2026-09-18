@@ -3,14 +3,15 @@ const https = require('node:https');
 const crypto = require('node:crypto');
 const fs = require('node:fs');
 const path = require('node:path');
-const admin = require('firebase-admin');
+const { createClient } = require('@supabase/supabase-js');
+const { createLegacyStore } = require('./supabase-legacy');
 
 loadEnvFile(path.join(__dirname, '.env.local'));
 loadEnvFile(path.join(__dirname, '.env'));
 
 const PORT = Number(process.env.PORT || 8787);
 const PUBLIC_BASE_URL = String(process.env.PUBLIC_BASE_URL || '').replace(/\/$/, '');
-const DATABASE_URL = process.env.FIREBASE_DATABASE_URL || 'https://cipher-pro-store-default-rtdb.firebaseio.com';
+const SUPABASE_URL = String(process.env.SUPABASE_URL || '');
 const OXAPAY_API_BASE = 'https://api.oxapay.com/v1';
 const OXAPAY_SANDBOX = String(process.env.OXAPAY_SANDBOX || 'false').toLowerCase() === 'true';
 const MAX_BODY_BYTES = 1024 * 1024;
@@ -20,6 +21,7 @@ const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN || '*';
 const RATE_LIMIT_WINDOW_MS = 60 * 1000;
 const rateBuckets = new Map();
 let database;
+let supabase;
 
 function loadEnvFile(filePath) {
   if (!fs.existsSync(filePath)) return;
@@ -40,21 +42,16 @@ function loadEnvFile(filePath) {
 
 function getDatabase() {
   if (database) return database;
-  const serviceAccountJson = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
-  if (!serviceAccountJson && !process.env.GOOGLE_APPLICATION_CREDENTIALS) {
-    throw Object.assign(new Error('Firebase Admin credentials are not configured on this server'), { statusCode: 503, code: 'firebase_not_configured' });
-  }
-  if (!admin.apps.length) {
-    const options = { databaseURL: DATABASE_URL };
-    if (serviceAccountJson) {
-      options.credential = admin.credential.cert(JSON.parse(serviceAccountJson));
-    } else {
-      options.credential = admin.credential.applicationDefault();
-    }
-    admin.initializeApp(options);
-  }
-  database = admin.database();
+  database = createLegacyStore();
   return database;
+}
+
+function getSupabase() {
+  if (supabase) return supabase;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!SUPABASE_URL || !key) throw Object.assign(new Error('Supabase server credentials are not configured'), { statusCode: 503, code: 'supabase_not_configured' });
+  supabase = createClient(SUPABASE_URL, key, { auth: { autoRefreshToken: false, persistSession: false } });
+  return supabase;
 }
 
 function roundMoney(value) {
@@ -137,9 +134,10 @@ async function requireUser(req) {
   const header = req.headers.authorization || '';
   const match = header.match(/^Bearer\s+(.+)$/i);
   if (!match) throw Object.assign(new Error('Authentication required'), { statusCode: 401 });
-  getDatabase();
   try {
-    return await admin.auth().verifyIdToken(match[1]);
+    const { data, error } = await getSupabase().auth.getUser(match[1]);
+    if (error || !data.user) throw error || new Error('Invalid token');
+    return { uid: data.user.id, email: data.user.email, name: data.user.user_metadata?.display_name || data.user.user_metadata?.name, admin: data.user.app_metadata?.admin === true || ['owner', 'admin', 'manager'].includes(data.user.app_metadata?.role), role: data.user.app_metadata?.role || 'customer' };
   } catch {
     throw Object.assign(new Error('Invalid or expired authentication token'), { statusCode: 401 });
   }
@@ -325,7 +323,7 @@ async function scanPriceAlerts() {
 }
 
 async function startCouponCleanup() {
-  if (!process.env.FIREBASE_SERVICE_ACCOUNT_JSON && !process.env.GOOGLE_APPLICATION_CREDENTIALS) return;
+  if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) return;
   try {
     const count = await cleanupExpiredCoupons();
     const alerts = await scanPriceAlerts();
@@ -1323,7 +1321,8 @@ async function giftCardToUser(user, body) {
   const recipientEmail = safeString(body.recipientEmail, 320).toLowerCase();
   const amountCents = cents(body.amount);
   if (!recipientEmail || !Number.isInteger(amountCents) || amountCents < 100) throw Object.assign(new Error('Recipient email and amount of at least $1 are required'), { statusCode: 400 });
-  const recipient = await admin.auth().getUserByEmail(recipientEmail).catch(() => null);
+  const { data: usersData } = await getSupabase().auth.admin.listUsers({ page: 1, perPage: 1000 });
+  const recipient = (usersData?.users || []).find(candidate => candidate.email?.toLowerCase() === recipientEmail) || null;
   if (!recipient || recipient.uid === user.uid) throw Object.assign(new Error('Recipient account was not found or cannot be yourself'), { statusCode: 400 });
   const creditRef = getDatabase().ref(`users/${user.uid}/storeCreditsCents`);
   const result = await creditRef.transaction(current => Number(current || 0) >= amountCents ? Number(current || 0) - amountCents : undefined);
@@ -1390,8 +1389,30 @@ async function updateSupportTicket(user, body) {
 }
 
 async function handleApi(req, res, pathname) {
+  if (pathname === '/api/public-config' && req.method === 'GET') {
+    return json(res, 200, { supabaseUrl: SUPABASE_URL, supabaseAnonKey: process.env.SUPABASE_ANON_KEY || '' });
+  }
+  if (pathname === '/api/data' && ['GET', 'POST', 'PATCH', 'DELETE'].includes(req.method)) {
+    const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
+    const dataPath = safeString(url.searchParams.get('path'), 500).replace(/^\/+|\/+$/g, '');
+    const publicRead = /^(products|meta\/brand|meta\/contact)$/.test(dataPath);
+    if (req.method === 'GET') {
+      if (!publicRead) await requireUser(req);
+      return json(res, 200, (await getDatabase().ref(dataPath).once('value')).val());
+    }
+    const user = await requireUser(req);
+    const isOwnPath = dataPath === `users/${user.uid}` || dataPath.startsWith(`users/${user.uid}/`);
+    if (!isOwnPath && user.admin !== true) throw Object.assign(new Error('Administrator access required'), { statusCode: 403 });
+    const body = await readJson(req);
+    if (req.method === 'POST') {
+      if (body.push === true) { const child = getDatabase().ref(dataPath).push(); await child.set(body.value); return json(res, 201, { key: child.key }); }
+      await getDatabase().ref(dataPath).set(body.value); return json(res, 200, { ok: true });
+    }
+    if (req.method === 'PATCH') { await getDatabase().ref(dataPath).update(body.value || {}); return json(res, 200, { ok: true }); }
+    await getDatabase().ref(dataPath).remove(); return json(res, 200, { ok: true });
+  }
   if (pathname === '/api/health' && req.method === 'GET') {
-    return json(res, 200, { ok: true, paymentConfigured: Boolean(process.env.OXAPAY_MERCHANT_API_KEY), publicUrlConfigured: Boolean(PUBLIC_BASE_URL), firebaseConfigured: Boolean(process.env.FIREBASE_SERVICE_ACCOUNT_JSON || process.env.GOOGLE_APPLICATION_CREDENTIALS) });
+    return json(res, 200, { ok: true, paymentConfigured: Boolean(process.env.OXAPAY_MERCHANT_API_KEY), publicUrlConfigured: Boolean(PUBLIC_BASE_URL), supabaseConfigured: Boolean(process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY) });
   }
   if (pathname === '/api/oxapay/webhook' && req.method === 'POST') return handleWebhook(req, res);
 
@@ -1565,7 +1586,7 @@ const server = http.createServer(async (req, res) => {
 if (require.main === module) {
   server.listen(PORT, () => {
     console.log(`Cipher Store server listening on http://localhost:${PORT}`);
-    if (process.env.FIREBASE_SERVICE_ACCOUNT_JSON || process.env.GOOGLE_APPLICATION_CREDENTIALS) {
+    if (process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY) {
       startCouponCleanup();
       setInterval(startCouponCleanup, 60 * 60 * 1000);
     }

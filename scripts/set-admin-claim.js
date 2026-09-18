@@ -1,51 +1,19 @@
 #!/usr/bin/env node
 'use strict';
-
-const fs = require('node:fs');
-const path = require('node:path');
-const admin = require('firebase-admin');
-
-function loadEnv(file) {
-  if (!fs.existsSync(file)) return;
-  for (const line of fs.readFileSync(file, 'utf8').split(/\r?\n/)) {
-    const trimmed = line.trim();
-    if (!trimmed || trimmed.startsWith('#')) continue;
-    const i = trimmed.indexOf('=');
-    if (i < 1) continue;
-    const key = trimmed.slice(0, i).trim();
-    let value = trimmed.slice(i + 1).trim();
-    if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))) value = value.slice(1, -1);
-    if (!process.env[key]) process.env[key] = value;
-  }
-}
-
-loadEnv(path.join(process.cwd(), '.env.local'));
-loadEnv(path.join(process.cwd(), '.env'));
-
-const email = process.argv[2];
-const role = process.argv[3] || 'owner';
-if (!email) {
-  console.error('Usage: node scripts/set-admin-claim.js admin@example.com');
-  process.exit(1);
-}
-
-const serviceAccountJson = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
-if (!serviceAccountJson) {
-  console.error('FIREBASE_SERVICE_ACCOUNT_JSON is required. Run this utility only on a trusted machine.');
-  process.exit(1);
-}
-
+const { createClient } = require('@supabase/supabase-js');
+const email = String(process.argv[2] || '').trim().toLowerCase();
+const role = String(process.argv[3] || 'owner').trim();
+if (!email) { console.error('Usage: npm run set-admin -- admin@example.com [owner|admin|manager]'); process.exit(1); }
+const url = process.env.SUPABASE_URL;
+const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+if (!url || !key) { console.error('SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are required. Run only on a trusted machine.'); process.exit(1); }
 (async () => {
-  const serviceAccount = JSON.parse(serviceAccountJson);
-  admin.initializeApp({
-    credential: admin.credential.cert(serviceAccount),
-    databaseURL: process.env.FIREBASE_DATABASE_URL
-  });
-  const user = await admin.auth().getUserByEmail(email);
-  const existing = user.customClaims || {};
-  await admin.auth().setCustomUserClaims(user.uid, { ...existing, admin: true, role });
-  console.log(`Admin claim set for ${user.email} (${user.uid}) with role ${role}. Sign out and sign back in to refresh the ID token.`);
-})().catch(error => {
-  console.error(error.code || error.message);
-  process.exit(1);
-});
+  const supabase = createClient(url, key, { auth: { autoRefreshToken: false, persistSession: false } });
+  const { data, error } = await supabase.auth.admin.listUsers({ page: 1, perPage: 1000 });
+  if (error) throw error;
+  const user = (data.users || []).find(candidate => candidate.email?.toLowerCase() === email);
+  if (!user) throw new Error(`No Supabase Auth user found for ${email}`);
+  const { error: updateError } = await supabase.auth.admin.updateUserById(user.id, { app_metadata: { ...(user.app_metadata || {}), admin: true, role } });
+  if (updateError) throw updateError;
+  console.log(`Supabase admin role '${role}' set for ${email} (${user.id}). Sign out and sign back in to refresh the session.`);
+})().catch(error => { console.error(error.message); process.exit(1); });

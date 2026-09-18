@@ -2623,41 +2623,29 @@
     <i class="fas fa-arrow-up"></i>
   </button>
 
-  <!-- Firebase SDK -->
+  <!-- Supabase SDK -->
   <script type="module">
-    import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js';
-    import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, createUserWithEmailAndPassword, updateProfile } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js';
-    import { getDatabase, ref, set, get, push, remove, onValue, update, off } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-database.js';
-
-    const firebaseConfig = {
-    apiKey: "AIzaSyBY19bfyTxQKV9qp_mGAPhJOVpUgy-v6R8",
-  authDomain: "cipher-pro-store.firebaseapp.com",
-  databaseURL: "https://cipher-pro-store-default-rtdb.firebaseio.com",
-  projectId: "cipher-pro-store",
-  storageBucket: "cipher-pro-store.firebasestorage.app",
-  messagingSenderId: "445639151152",
-  appId: "1:445639151152:web:93cbca2068849284cd67f5",
-  measurementId: "G-BZRH898NCH"
-};
-
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const db = getDatabase(app);
-
-    window.auth = auth;
-    window.db = db;
-    window.dbRef = ref;
-    window.dbSet = set;
-    window.dbGet = get;
-    window.dbPush = push;
-    window.dbRemove = remove;
-    window.dbOnValue = onValue;
-    window.dbUpdate = update;
-    window.dbOff = off;
-    window.signInWithEmailAndPassword = signInWithEmailAndPassword;
-    window.signOut = signOut;
-    window.createUserWithEmailAndPassword = createUserWithEmailAndPassword;
-    window.updateProfile = updateProfile;
+    import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+    const config = await fetch('/api/public-config').then(response => response.json());
+    const supabase = createClient(config.supabaseUrl, config.supabaseAnonKey);
+    const auth = supabase.auth; const db = {};
+    const token = async () => (await auth.getSession()).data.session?.access_token || '';
+    const ref = path => ({ path });
+    const request = async (method, path, value) => { const sessionToken = await token(); const response = await fetch(`/api/data?path=${encodeURIComponent(path)}`, { method, headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${sessionToken}` }, body: method === 'GET' || method === 'DELETE' ? undefined : JSON.stringify({ value }) }); if (!response.ok) throw new Error((await response.json().catch(() => ({}))).error || 'Database request failed'); return response.json(); };
+    const snapshot = value => ({ exists: () => value !== null && value !== undefined, val: () => value });
+    const get = async reference => snapshot(await request('GET', reference.path));
+    const set = (reference, value) => request('POST', reference.path, value);
+    const update = (reference, value) => request('PATCH', reference.path, value);
+    const remove = reference => request('DELETE', reference.path);
+    const push = reference => { const key = crypto.randomUUID(); return { key, set: value => request('POST', `${reference.path}/${key}`, value) }; };
+    const onValue = (reference, callback) => { let stopped = false; const poll = async () => { if (stopped) return; callback(await get(reference)); if (!stopped) setTimeout(poll, 10000); }; poll(); return () => { stopped = true; }; };
+    const off = () => {};
+    const signInWithEmailAndPassword = (_, email, password) => auth.signInWithPassword({ email, password });
+    const signOut = () => auth.signOut();
+    const updateProfile = (user, profile) => auth.updateUser({ data: { display_name: profile.displayName } });
+    const onAuthStateChanged = callback => { auth.onAuthStateChange((_event, session) => { const user = session?.user ? { ...session.user, uid: session.user.id, displayName: session.user.user_metadata?.display_name || session.user.email, getIdToken: async () => (await auth.getSession()).data.session?.access_token, getIdTokenResult: async () => ({ claims: { admin: session.user.app_metadata?.admin === true || ['owner','admin','manager'].includes(session.user.app_metadata?.role) } }) } : null; window.currentUser = user; callback(user); }); };
+    Object.defineProperty(auth, 'currentUser', { configurable: true, get: () => window.currentUser });
+    window.auth = auth; window.db = db; window.dbRef = (_, path) => ref(path); window.dbSet = set; window.dbGet = get; window.dbPush = push; window.dbRemove = remove; window.dbOnValue = onValue; window.dbUpdate = update; window.dbOff = off; window.signInWithEmailAndPassword = signInWithEmailAndPassword; window.signOut = signOut; window.updateProfile = updateProfile;
 
     let activeListeners = [];
 

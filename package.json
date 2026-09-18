@@ -10,6 +10,6 @@
     "set-admin": "node scripts/set-admin-claim.js"
   },
   "dependencies": {
-    "firebase-admin": "^13.5.0"
+    "@supabase/supabase-js": "^2.116.0"
   }
 }

@@ -16,7 +16,9 @@ services:
         sync: false
       - key: ALLOWED_ORIGIN
         sync: false
-      - key: FIREBASE_DATABASE_URL
-        value: "https://cipher-pro-store-default-rtdb.firebaseio.com"
-      - key: FIREBASE_SERVICE_ACCOUNT_JSON
+      - key: SUPABASE_URL
+        value: "https://ozhejjbfmltmimmzwpdv.supabase.co"
+      - key: SUPABASE_ANON_KEY
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
         sync: false

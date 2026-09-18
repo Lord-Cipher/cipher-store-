@@ -2896,96 +2896,38 @@
     <i class="fas fa-arrow-up"></i>
   </div>
 
-  <!-- Firebase SDK -->
+  <!-- Supabase SDK -->
   <script type="module">
-    import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js';
-    import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js';
-    import { getDatabase, ref, set, get, push, onValue, remove, update, query, orderByChild, limitToLast, runTransaction } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-database.js';
-
-    const firebaseConfig = {
-    apiKey: "AIzaSyBY19bfyTxQKV9qp_mGAPhJOVpUgy-v6R8",
-  authDomain: "cipher-pro-store.firebaseapp.com",
-  databaseURL: "https://cipher-pro-store-default-rtdb.firebaseio.com",
-  projectId: "cipher-pro-store",
-  storageBucket: "cipher-pro-store.firebasestorage.app",
-  messagingSenderId: "445639151152",
-  appId: "1:445639151152:web:93cbca2068849284cd67f5",
-  measurementId: "G-BZRH898NCH"
-};
-
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const db = getDatabase(app);
-
-    window.auth = auth;
-    window.db = db;
-    window.dbRef = ref;
-    window.dbSet = set;
-    window.dbGet = get;
-    window.dbPush = push;
-    window.dbOnValue = onValue;
-    window.dbRemove = remove;
-    window.dbUpdate = update;
-    window.dbQuery = query;
-    window.dbOrderByChild = orderByChild;
-    window.dbLimitToLast = limitToLast;
-    window.dbRunTransaction = runTransaction;
-    window.authCreateUser = createUserWithEmailAndPassword;
-    window.authSignIn = signInWithEmailAndPassword;
-    window.authSignOut = signOut;
-    window.authUpdateProfile = updateProfile;
-
-    window.currentUser = null;
-    window.allProducts = [];
-    window.currentProduct = null;
-    window.cart = [];
-    window.appliedCoupon = null;
-    window.currentFilter = 'all';
-    window.confirmCallback = null;
-
-    // Check auth state
-    onAuthStateChanged(auth, (user) => {
-      window.currentUser = user;
-      updateMenu();
-      loadProducts();
-      loadCartFromStorage();
-      if (user) {
-        loadChatMessages();
-        setTimeout(handlePaymentReturn, 350);
-      }
-    });
-
-    // Load brand settings
-    async function loadBrandSettings() {
-      try {
-        const snapshot = await get(ref(db, 'meta/brand'));
-        if (snapshot.exists()) {
-          const data = snapshot.val();
-          if (data.logoUrl) {
-            document.getElementById('headerLogo').src = data.logoUrl;
-            document.getElementById('headerLogo').style.display = 'block';
-          }
-          if (data.name) {
-            document.getElementById('headerBrandName').textContent = data.name;
-          }
-        }
-      } catch (error) {
-        console.error('Error loading brand:', error);
-      }
-    }
-
-    loadBrandSettings();
-
-    // Real-time listeners for products
-    onValue(ref(db, 'products'), (snapshot) => {
-      if (snapshot.exists()) {
-        window.allProducts = Object.entries(snapshot.val()).map(([id, product]) => ({
-          id,
-          ...product
-        }));
-        displayProducts(window.allProducts);
-      }
-    });
+    import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+    const config = await fetch('/api/public-config').then(response => response.json());
+    const supabase = createClient(config.supabaseUrl, config.supabaseAnonKey);
+    const token = async () => (await supabase.auth.getSession()).data.session?.access_token || '';
+    const apiData = async (method, path, value) => { const response = await fetch(`/api/data?path=${encodeURIComponent(path)}`, { method, headers: { 'Content-Type': 'application/json', ...(await token() ? { Authorization: `Bearer ${await token()}` } : {}) }, body: method === 'GET' || method === 'DELETE' ? undefined : JSON.stringify({ value }) }); if (!response.ok) throw new Error((await response.json().catch(() => ({}))).error || 'Database request failed'); return response.json(); };
+    const snapshot = value => ({ exists: () => value !== null && value !== undefined, val: () => value });
+    const ref = path => ({ path });
+    window.auth = { get currentUser() { return window.currentUser; } };
+    window.db = {};
+    window.dbRef = (_, path) => ref(path);
+    window.dbGet = async reference => snapshot(await apiData('GET', reference.path));
+    window.dbSet = async (reference, value) => apiData('POST', reference.path, value);
+    window.dbUpdate = async (reference, value) => apiData('PATCH', reference.path, value);
+    window.dbRemove = async reference => apiData('DELETE', reference.path);
+    window.dbPush = reference => { const key = crypto.randomUUID(); return { key, set: value => apiData('POST', `${reference.path}/${key}`, value) }; };
+    window.dbOnValue = (reference, callback) => { let stopped = false; const poll = async () => { if (stopped) return; try { callback(snapshot(await apiData('GET', reference.path))); } catch (error) { console.warn(error.message); } if (!stopped) setTimeout(poll, 10000); }; poll(); return () => { stopped = true; }; };
+    window.dbOff = () => {};
+    window.dbQuery = reference => reference;
+    window.dbOrderByChild = () => {};
+    window.dbLimitToLast = reference => reference;
+    window.dbRunTransaction = async (reference, callback) => { const current = (await window.dbGet(reference)).val(); const next = callback(current); if (next === undefined) return { committed: false, snapshot: snapshot(current) }; await window.dbSet(reference, next); return { committed: true, snapshot: snapshot(next) }; };
+    window.authCreateUser = async (_, email, password) => { const { data, error } = await supabase.auth.signUp({ email, password, options: { data: { display_name: document.getElementById('signupName')?.value || 'Customer' } } }); if (error) throw error; return { user: data.user }; };
+    window.authSignIn = async (_, email, password) => { const { data, error } = await supabase.auth.signInWithPassword({ email, password }); if (error) throw error; return { user: data.user }; };
+    window.authSignOut = async () => supabase.auth.signOut();
+    window.authUpdateProfile = async (user, profile) => supabase.auth.updateUser({ data: { display_name: profile.displayName } });
+    window.currentUser = null; window.allProducts = []; window.currentProduct = null; window.cart = []; window.appliedCoupon = null; window.currentFilter = 'all'; window.confirmCallback = null;
+    const updateUser = user => { window.currentUser = user ? { ...user, uid: user.id, displayName: user.user_metadata?.display_name || user.email, getIdToken: async () => (await supabase.auth.getSession()).data.session?.access_token } : null; updateMenu(); loadProducts(); loadCartFromStorage(); if (window.currentUser) { loadChatMessages(); setTimeout(handlePaymentReturn, 350); } };
+    supabase.auth.onAuthStateChange((_event, session) => updateUser(session?.user || null));
+    const brandSnapshot = await apiData('GET', 'meta/brand').catch(() => null); if (brandSnapshot?.name) document.getElementById('headerBrandName').textContent = brandSnapshot.name; if (brandSnapshot?.logoUrl) { document.getElementById('headerLogo').src = brandSnapshot.logoUrl; document.getElementById('headerLogo').style.display = 'block'; }
+    window.dbOnValue(window.dbRef(window.db, 'products'), snapshotData => { if (snapshotData.exists()) { window.allProducts = Object.entries(snapshotData.val()).map(([id, product]) => ({ id, ...product })); displayProducts(window.allProducts); } });
   </script>
 
   <script>
