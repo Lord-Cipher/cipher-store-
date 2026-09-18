@@ -33,6 +33,10 @@
       "adminSetup": {
         ".read": "auth != null && auth.token.admin === true",
         ".write": false
+      },
+      "referrals": {
+        ".read": "auth != null && auth.token.admin === true",
+        ".write": "auth != null && auth.token.admin === true"
       }
     },
 
@@ -66,6 +70,16 @@
         },
 
         "rewardLedger": {
+          ".read": "auth != null && (auth.uid === $uid || auth.token.admin === true)",
+          ".write": false
+        },
+
+        "coins": {
+          ".read": "auth != null && (auth.uid === $uid || auth.token.admin === true)",
+          ".write": false
+        },
+
+        "coinLedger": {
           ".read": "auth != null && (auth.uid === $uid || auth.token.admin === true)",
           ".write": false
         },

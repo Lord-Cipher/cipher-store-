@@ -936,6 +936,40 @@ async function getOrCreateReferralCode(user) {
   return code;
 }
 
+async function getReferralConfig() {
+  const snapshot = await getDatabase().ref('meta/referrals').once('value');
+  const config = snapshot.exists() ? snapshot.val() : {};
+  return {
+    enabled: config.enabled !== false,
+    referrerCoins: Math.max(0, Math.floor(Number(config.referrerCoins ?? 100))),
+    newUserCoins: Math.max(0, Math.floor(Number(config.newUserCoins ?? 50))),
+    coinToCreditCents: Math.max(1, Math.floor(Number(config.coinToCreditCents ?? 1))),
+    requirePurchase: config.requirePurchase === true
+  };
+}
+
+async function incrementCoins(userId, amount, reason, metadata = {}) {
+  const coinsRef = getDatabase().ref(`users/${userId}/coins`);
+  const transaction = await coinsRef.transaction(current => Math.max(0, Number(current || 0) + Math.floor(Number(amount || 0))));
+  if (transaction.committed && amount) {
+    await getDatabase().ref(`users/${userId}/coinLedger`).push({ amount: Math.floor(Number(amount)), reason: safeString(reason, 120), metadata, createdAt: new Date().toISOString() });
+  }
+  return Number(transaction.snapshot.val() || 0);
+}
+
+async function redeemCoins(user, body) {
+  const config = await getReferralConfig();
+  const requested = Math.floor(Number(body.coins || 0));
+  if (!Number.isInteger(requested) || requested < 100) throw Object.assign(new Error('Redeem at least 100 coins'), { statusCode: 400 });
+  const coinsRef = getDatabase().ref(`users/${user.uid}/coins`);
+  const result = await coinsRef.transaction(current => Number(current || 0) >= requested ? Number(current || 0) - requested : undefined);
+  if (!result.committed) throw Object.assign(new Error('You do not have enough coins'), { statusCode: 409 });
+  const creditCents = requested * config.coinToCreditCents;
+  await getDatabase().ref(`users/${user.uid}/storeCreditsCents`).transaction(current => Number(current || 0) + creditCents);
+  await getDatabase().ref(`users/${user.uid}/coinLedger`).push({ amount: -requested, reason: 'coins_redeemed', metadata: { creditCents }, createdAt: new Date().toISOString() });
+  return { coins: Number(result.snapshot.val() || 0), creditCents };
+}
+
 async function applyReferralCode(user, body) {
   const code = safeString(body.code, 40).toUpperCase();
   if (!code) throw Object.assign(new Error('Referral code is required'), { statusCode: 400 });
@@ -943,6 +977,8 @@ async function applyReferralCode(user, body) {
   if (!codeSnapshot.exists()) throw Object.assign(new Error('Referral code not found'), { statusCode: 404 });
   const referrerId = safeString(codeSnapshot.val()?.userId, 200);
   if (!referrerId || referrerId === user.uid) throw Object.assign(new Error('You cannot use your own referral code'), { statusCode: 400 });
+  const config = await getReferralConfig();
+  if (!config.enabled) throw Object.assign(new Error('Referral rewards are temporarily paused'), { statusCode: 503 });
   const existing = await getDatabase().ref(`users/${user.uid}/referredBy`).once('value');
   if (existing.exists()) throw Object.assign(new Error('A referral code has already been applied to this account'), { statusCode: 409 });
   const now = new Date().toISOString();
@@ -952,7 +988,14 @@ async function applyReferralCode(user, body) {
     [`users/${user.uid}/referredAt`]: now,
     [`users/${referrerId}/referrals/${user.uid}`]: { userId: user.uid, code, status: 'pending_purchase', createdAt: now }
   });
-  return { applied: true };
+  const markerRef = getDatabase().ref(`users/${user.uid}/referralCoinRewards/${referrerId}`);
+  const marker = await markerRef.transaction(current => current || { createdAt: now, referrerId });
+  if (marker.committed && marker.snapshot.val()?.createdAt === now) {
+    await incrementCoins(user.uid, config.newUserCoins, 'referral_joined', { referrerId });
+    await incrementCoins(referrerId, config.referrerCoins, 'referral_joined', { referredUserId: user.uid });
+    await getDatabase().ref(`users/${referrerId}/referrals/${user.uid}`).update({ status: 'joined', coinsAwarded: true, joinedAt: now });
+  }
+  return { applied: true, newUserCoins: config.newUserCoins };
 }
 
 async function incrementRewardPoints(userId, amount, reason, metadata = {}) {
@@ -1032,7 +1075,7 @@ async function playRewardGame(user, body) {
 
 async function getMemberOverview(user) {
   const db = getDatabase();
-  const [profileSnapshot, purchasesSnapshot, wishlistSnapshot, alertsSnapshot, rewardsSnapshot, gameSnapshot, referralsSnapshot, notificationsSnapshot, downloadsSnapshot, achievementsSnapshot] = await Promise.all([
+  const [profileSnapshot, purchasesSnapshot, wishlistSnapshot, alertsSnapshot, rewardsSnapshot, gameSnapshot, referralsSnapshot, notificationsSnapshot, downloadsSnapshot, achievementsSnapshot, coinsSnapshot, coinLedgerSnapshot] = await Promise.all([
     db.ref(`users/${user.uid}`).once('value'),
     db.ref(`users/${user.uid}/purchases`).once('value'),
     db.ref(`users/${user.uid}/wishlist`).once('value'),
@@ -1042,7 +1085,9 @@ async function getMemberOverview(user) {
     db.ref(`users/${user.uid}/referrals`).once('value'),
     db.ref(`users/${user.uid}/notifications`).once('value'),
     db.ref(`users/${user.uid}/downloadHistory`).limitToLast(20).once('value'),
-    db.ref(`users/${user.uid}/achievements`).once('value')
+    db.ref(`users/${user.uid}/achievements`).once('value'),
+    db.ref(`users/${user.uid}/coins`).once('value'),
+    db.ref(`users/${user.uid}/coinLedger`).limitToLast(50).once('value')
   ]);
   const profile = profileSnapshot.exists() ? profileSnapshot.val() : {};
   const purchases = purchasesSnapshot.exists() ? Object.values(purchasesSnapshot.val()) : [];
@@ -1051,6 +1096,8 @@ async function getMemberOverview(user) {
   const referrals = referralsSnapshot.exists() ? Object.values(referralsSnapshot.val()) : [];
   const notifications = notificationsSnapshot.exists() ? Object.values(notificationsSnapshot.val()).sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0)).slice(0, 20) : [];
   const downloads = downloadsSnapshot.exists() ? Object.values(downloadsSnapshot.val()).sort((a, b) => new Date(b.downloadedAt || 0) - new Date(a.downloadedAt || 0)) : [];
+  const coins = Number(coinsSnapshot.val() || 0);
+  const tier = coins >= 1000 || purchases.length >= 10 ? 'Gold' : coins >= 250 || purchases.length >= 3 ? 'Silver' : 'Bronze';
   return {
     profile: { displayName: safeString(profile.displayName || user.name || user.email?.split('@')[0] || 'Customer', 120), email: safeString(user.email, 320), referralCode: await getOrCreateReferralCode(user), referredBy: profile.referredBy || null },
     purchases: purchases.slice(-50),
@@ -1061,6 +1108,9 @@ async function getMemberOverview(user) {
     game: gameSnapshot.exists() ? gameSnapshot.val() : {},
     achievements: achievementsSnapshot.exists() ? achievementsSnapshot.val() : {},
     referrals: referrals.slice(-100),
+    coins,
+    coinLedger: coinLedgerSnapshot.exists() ? Object.values(coinLedgerSnapshot.val()).reverse() : [],
+    loyaltyTier: tier,
     notifications,
     downloads
   };
@@ -1314,6 +1364,28 @@ async function handleApi(req, res, pathname) {
   }
   if (pathname === '/api/member/referral-code' && req.method === 'POST') {
     return json(res, 201, await applyReferralCode(await requireUser(req), await readJson(req)));
+  }
+  if (pathname === '/api/member/redeem-coins' && req.method === 'POST') {
+    return json(res, 201, await redeemCoins(await requireUser(req), await readJson(req)));
+  }
+  if (pathname === '/api/admin/referral-config' && req.method === 'GET') {
+    await requireAdmin(req);
+    return json(res, 200, await getReferralConfig());
+  }
+  if (pathname === '/api/admin/referral-config' && req.method === 'PUT') {
+    const adminUser = await requireAdmin(req);
+    const body = await readJson(req);
+    const config = {
+      enabled: body.enabled !== false,
+      referrerCoins: Math.max(0, Math.floor(Number(body.referrerCoins || 0))),
+      newUserCoins: Math.max(0, Math.floor(Number(body.newUserCoins || 0))),
+      coinToCreditCents: Math.max(1, Math.floor(Number(body.coinToCreditCents || 1))),
+      requirePurchase: body.requirePurchase === true,
+      updatedAt: new Date().toISOString()
+    };
+    await getDatabase().ref('meta/referrals').set(config);
+    await writeAudit(adminUser, 'referral_config_updated', config);
+    return json(res, 200, config);
   }
   if (pathname === '/api/member/redeem-points' && req.method === 'POST') {
     return json(res, 201, await redeemRewardPoints(await requireUser(req), await readJson(req)));

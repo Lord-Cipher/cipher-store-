@@ -2511,6 +2511,15 @@
         </div>
         <button type="button" class="btn" id="createGiftCardBtn"><i class="fas fa-plus"></i> Create Gift Card</button>
       </div>
+      <div class="card">
+        <h2 class="card-title"><i class="fas fa-user-friends"></i> Referral Coins</h2>
+        <div id="referralConfigSuccess" style="display:none" class="success-message"></div>
+        <div class="input-group"><label>Referrer coins</label><input type="number" id="referrerCoins" min="0" value="100"></div>
+        <div class="input-group"><label>New-user coins</label><input type="number" id="newUserCoins" min="0" value="50"></div>
+        <div class="input-group"><label>Credit cents per coin</label><input type="number" id="coinToCreditCents" min="1" value="1"></div>
+        <label style="display:block;margin:12px 0;color:#00ffff"><input type="checkbox" id="referralsEnabled" checked> Enable referral rewards</label>
+        <button type="button" class="btn" id="saveReferralConfigBtn"><i class="fas fa-save"></i> Save Referral Settings</button>
+      </div>
 
       <div class="card">
         <h2 class="card-title"><i class="fas fa-info-circle"></i> System Information</h2>
@@ -2754,6 +2763,7 @@
         
         loadBrandSettings();
         loadContactSettings();
+        loadReferralConfig();
         loadProducts();
         loadOrders();
         loadCoupons();
@@ -4943,6 +4953,31 @@
     }
 
     document.getElementById('createGiftCardBtn')?.addEventListener('click', createGiftCard);
+
+    async function loadReferralConfig() {
+      try {
+        const token = await window.auth.currentUser.getIdToken();
+        const response = await fetch('/api/admin/referral-config', { headers: { Authorization: `Bearer ${token}` } });
+        const config = await response.json();
+        if (!response.ok) throw new Error(config.error || 'Could not load referral settings');
+        document.getElementById('referrerCoins').value = config.referrerCoins;
+        document.getElementById('newUserCoins').value = config.newUserCoins;
+        document.getElementById('coinToCreditCents').value = config.coinToCreditCents;
+        document.getElementById('referralsEnabled').checked = config.enabled !== false;
+      } catch (error) { showMessage('referralConfigSuccess', error.message, 'error'); }
+    }
+    async function saveReferralConfig() {
+      try {
+        const token = await window.auth.currentUser.getIdToken();
+        const response = await fetch('/api/admin/referral-config', { method: 'PUT', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({
+          referrerCoins: Number(document.getElementById('referrerCoins').value), newUserCoins: Number(document.getElementById('newUserCoins').value), coinToCreditCents: Number(document.getElementById('coinToCreditCents').value), enabled: document.getElementById('referralsEnabled').checked
+        }) });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || 'Could not save referral settings');
+        showMessage('referralConfigSuccess', 'Referral coin settings saved.', 'success');
+      } catch (error) { showMessage('referralConfigSuccess', error.message, 'error'); }
+    }
+    document.getElementById('saveReferralConfigBtn')?.addEventListener('click', saveReferralConfig);
 
     async function loadOperations(path) {
       const output = document.getElementById('operationsOutput');

@@ -4291,6 +4291,7 @@ function applyFilter(products, filter) {
     function renderMemberHub(data) {
         const rewards = data.rewards || {};
       const storeCredits = Number(data.storeCreditsCents || 0) / 100;
+      const coins = Number(data.coins || 0);
       const game = data.game || {};
       const referrals = data.referrals || [];
       const notifications = data.notifications || [];
@@ -4320,10 +4321,11 @@ function applyFilter(products, filter) {
           <div class="hub-card"><div class="hub-card-title"><i class="fas fa-book-open"></i> Library</div><strong>${(data.purchases || []).length}</strong><span>confirmed tools</span><button class="btn btn-small" onclick="closeModal('memberHubModal'); showPurchaseHistory();">Open library</button></div>
           <div class="hub-card"><div class="hub-card-title"><i class="fas fa-gamepad"></i> Daily games</div><strong>${escapeHtml(playText)}</strong><span>Spin or scratch once a day</span><button class="btn btn-small" onclick="closeModal('memberHubModal'); openGamesModal();">Play now</button></div>
           <div class="hub-card"><div class="hub-card-title"><i class="fas fa-heart"></i> Wishlist</div><strong>${wishlist.length}</strong><span>saved products</span><button class="btn btn-small" onclick="closeModal('memberHubModal'); showBookmarks();">View wishlist</button></div>
-          <div class="hub-card"><div class="hub-card-title"><i class="fas fa-user-friends"></i> Referrals</div><strong>${referrals.length}</strong><span>invited customers</span><button class="btn btn-small" onclick="copyReferralCode('${escapeHtml(data.profile?.referralCode || '')}')">Copy code</button></div>
+          <div class="hub-card"><div class="hub-card-title"><i class="fas fa-user-friends"></i> Referrals</div><strong>${referrals.length}</strong><span>${coins} coins · ${escapeHtml(data.loyaltyTier || 'Bronze')} tier</span><button class="btn btn-small" onclick="copyReferralCode('${escapeHtml(data.profile?.referralCode || '')}')">Copy code</button></div>
           <div class="hub-card"><div class="hub-card-title"><i class="fas fa-coins"></i> Store credits</div><strong>${formatCurrency(storeCredits)}</strong><span>available balance</span><button class="btn btn-small" onclick="document.getElementById('hubRedeemPointsInput').focus()">Redeem points</button></div>
         </div>
         <div class="hub-section"><div class="hub-section-title"><i class="fas fa-coins"></i> Redeem reward points</div><div class="hub-referral-row"><input id="hubRedeemPointsInput" class="coupon-input" type="number" min="100" step="100" placeholder="Points, minimum 100"><button class="btn btn-small" onclick="redeemPointsFromHub()">Convert</button></div><div class="hub-muted" style="margin-top:8px;">Every 100 points becomes $1.00 in store credit.</div></div>
+        <div class="hub-section"><div class="hub-section-title"><i class="fas fa-coins"></i> Redeem referral coins</div><div class="hub-referral-row"><input id="hubRedeemCoinsInput" class="coupon-input" type="number" min="100" step="100" placeholder="Coins, minimum 100"><button class="btn btn-small" onclick="redeemCoinsFromHub()">Convert</button></div><div class="hub-muted" style="margin-top:8px;">Your balance: ${coins} coins.</div></div>
         <div class="hub-section"><div class="hub-section-title"><i class="fas fa-gift"></i> Referral code</div><div class="hub-referral-row"><code id="hubReferralCode">${escapeHtml(data.profile?.referralCode || 'Generating...')}</code><button class="btn btn-small" onclick="copyReferralCode(document.getElementById('hubReferralCode').textContent)"><i class="fas fa-copy"></i> Copy</button></div><div class="hub-referral-row"><input id="hubReferralInput" class="coupon-input" placeholder="Have a referral code?"><button class="btn btn-small" onclick="applyReferralFromHub()">Apply</button></div></div>
         <div class="hub-section"><div class="hub-section-title"><i class="fas fa-bell"></i> Price alerts</div>${alertRows}</div>
         <div class="hub-section"><div class="hub-section-title"><i class="fas fa-medal"></i> Achievements</div><div class="hub-pills">${achievementRows}</div></div>
@@ -4335,7 +4337,8 @@ function applyFilter(products, filter) {
 
     function copyReferralCode(code) {
       if (!code) return;
-      navigator.clipboard?.writeText(code).then(() => showNotification('Referral code copied')).catch(() => showNotification('Copy failed — select the code manually', 'error'));
+      const referralLink = `${window.location.origin}${window.location.pathname}?ref=${encodeURIComponent(code)}`;
+      navigator.clipboard?.writeText(referralLink).then(() => showNotification('Referral link copied')).catch(() => showNotification('Copy failed — select the link manually', 'error'));
     }
 
     async function applyReferralFromHub() {
@@ -4348,6 +4351,15 @@ function applyFilter(products, filter) {
       } catch (error) {
         showNotification(error.message, 'error');
       }
+    }
+
+    async function redeemCoinsFromHub() {
+      const coins = Number(document.getElementById('hubRedeemCoinsInput')?.value || 0);
+      try {
+        const result = await apiRequest('/api/member/redeem-coins', { method: 'POST', body: JSON.stringify({ coins }) });
+        showNotification(`Converted ${coins} coins into ${formatCurrency(result.creditCents / 100)} store credit.`, 'success');
+        showMemberHub();
+      } catch (error) { showNotification(error.message, 'error'); }
     }
 
     async function toggleWishlistFromProduct(productId) {
@@ -4996,6 +5008,16 @@ Once payment is completed, the download link for your purchased digital item (HT
           email: email,
           createdAt: new Date().toISOString()
         });
+
+        const referralCode = new URLSearchParams(window.location.search).get('ref') || localStorage.getItem('cipherReferralCode');
+        if (referralCode) {
+          try {
+            await apiRequest('/api/member/referral-code', { method: 'POST', body: JSON.stringify({ code: referralCode }) });
+            localStorage.removeItem('cipherReferralCode');
+          } catch (referralError) {
+            console.warn('Referral could not be applied automatically:', referralError.message);
+          }
+        }
 
         hideLoading();
 
@@ -5768,6 +5790,8 @@ Once payment is completed, the download link for your purchased digital item (HT
     `);
 
     // Debug mode (only in development)
+    const referralFromUrl = new URLSearchParams(window.location.search).get('ref');
+    if (referralFromUrl) localStorage.setItem('cipherReferralCode', referralFromUrl);
     const DEBUG_MODE = false;
 
     if (DEBUG_MODE) {
