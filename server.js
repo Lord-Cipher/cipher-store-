@@ -179,6 +179,7 @@ function getProductPrice(product) {
 
 function getCouponDiscount(coupon, subtotal) {
   if (!coupon || !coupon.isActive) return null;
+  if (coupon.startDate && new Date(coupon.startDate).getTime() > Date.now()) return null;
   if (coupon.expiryDate && new Date(coupon.expiryDate).getTime() <= Date.now()) return null;
   const usageLimit = Number(coupon.usageLimit || 0);
   const usedCount = Number(coupon.usedCount || 0);
@@ -221,6 +222,7 @@ async function reserveCouponForSession(couponId, sessionId, session) {
   const couponRef = getDatabase().ref(`coupons/${couponId}`);
   return couponRef.transaction(current => {
     if (!current || !current.isActive) return;
+    if (current.startDate && new Date(current.startDate).getTime() > Date.now()) return;
     if (current.expiryDate && new Date(current.expiryDate).getTime() <= Date.now()) return;
     const usageLimit = Number(current.usageLimit || 0);
     const usedCount = Number(current.usedCount || 0);
@@ -1250,6 +1252,18 @@ async function openMysteryBox(user) {
   return { cost: 50, reward, points: Number(result.snapshot.val()?.points || 0) };
 }
 
+async function saveNotificationPreferences(user, body) {
+  const preferences = {
+    priceAlerts: body.priceAlerts !== false,
+    purchaseReceipts: body.purchaseReceipts !== false,
+    gameRewards: body.gameRewards !== false,
+    supportMessages: body.supportMessages !== false,
+    updatedAt: new Date().toISOString()
+  };
+  await getDatabase().ref(`users/${user.uid}/notificationPreferences`).set(preferences);
+  return preferences;
+}
+
 async function handleApi(req, res, pathname) {
   if (pathname === '/api/health' && req.method === 'GET') {
     return json(res, 200, { ok: true, paymentConfigured: Boolean(process.env.OXAPAY_MERCHANT_API_KEY), publicUrlConfigured: Boolean(PUBLIC_BASE_URL), firebaseConfigured: Boolean(process.env.FIREBASE_SERVICE_ACCOUNT_JSON || process.env.GOOGLE_APPLICATION_CREDENTIALS) });
@@ -1314,6 +1328,14 @@ async function handleApi(req, res, pathname) {
   if (pathname === '/api/rewards/mystery-box' && req.method === 'POST') {
     return json(res, 201, await openMysteryBox(await requireUser(req)));
   }
+  if (pathname === '/api/member/notification-preferences' && req.method === 'GET') {
+    const user = await requireUser(req);
+    const snapshot = await getDatabase().ref(`users/${user.uid}/notificationPreferences`).once('value');
+    return json(res, 200, snapshot.exists() ? snapshot.val() : { priceAlerts: true, purchaseReceipts: true, gameRewards: true, supportMessages: true });
+  }
+  if (pathname === '/api/member/notification-preferences' && req.method === 'PUT') {
+    return json(res, 200, await saveNotificationPreferences(await requireUser(req), await readJson(req)));
+  }
   if (pathname === '/api/gift-cards/create' && req.method === 'POST') {
     return json(res, 201, await createGiftCard(await requireAdmin(req), await readJson(req)));
   }
@@ -1323,6 +1345,23 @@ async function handleApi(req, res, pathname) {
   const changelogMatch = pathname.match(/^\/api\/admin\/products\/([^/]+)\/changelog$/);
   if (changelogMatch && req.method === 'PUT') {
     return json(res, 200, await updateProductChangelog(await requireAdmin(req), decodeURIComponent(changelogMatch[1]), await readJson(req)));
+  }
+  if (pathname === '/api/admin/audit-logs' && req.method === 'GET') {
+    await requireAdmin(req);
+    const snapshot = await getDatabase().ref('auditLogs').limitToLast(200).once('value');
+    return json(res, 200, { logs: snapshot.exists() ? Object.values(snapshot.val()).reverse() : [] });
+  }
+  if (pathname === '/api/admin/payment-reconciliation' && req.method === 'GET') {
+    await requireAdmin(req);
+    const snapshot = await getDatabase().ref('paymentSessions').once('value');
+    const sessions = snapshot.exists() ? Object.values(snapshot.val()) : [];
+    return json(res, 200, {
+      total: sessions.length,
+      confirmed: sessions.filter(item => item.status === 'confirmed').length,
+      pending: sessions.filter(item => item.status !== 'confirmed' && item.status !== 'failed' && item.status !== 'expired').length,
+      mismatched: sessions.filter(item => item.paymentStatus === 'amount_mismatch').length,
+      failed: sessions.filter(item => ['failed', 'expired'].includes(item.status)).length
+    });
   }
 
   const downloadMatch = pathname.match(/^\/api\/library\/download\/([^/]+)$/);

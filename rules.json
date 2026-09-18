@@ -115,6 +115,11 @@
           ".write": false
         },
 
+        "notificationPreferences": {
+          ".read": "auth != null && (auth.uid === $uid || auth.token.admin === true)",
+          ".write": false
+        },
+
         "downloadHistory": {
           ".read": "auth != null && (auth.uid === $uid || auth.token.admin === true)",
           ".write": false

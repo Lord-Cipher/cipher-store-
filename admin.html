@@ -2270,6 +2270,12 @@
           </small>
         </div>
 
+        <div class="input-group">
+          <label><i class="fas fa-code-branch"></i> Version History (one JSON object per line)</label>
+          <textarea id="productChangelog" placeholder='{"version":"1.1.0","notes":"Added new features"}'></textarea>
+          <small style="color: #999; font-size: 12px; margin-top: 5px; display: block;">Each line must contain a JSON object with version and notes.</small>
+        </div>
+
         <!-- Product Screenshots Section -->
         <div class="input-group">
           <label><i class="fas fa-images"></i> Product Screenshots</label>
@@ -2371,6 +2377,12 @@
           <label><i class="fas fa-calendar-times"></i> Expiry Date</label>
           <input type="datetime-local" id="couponExpiryDate">
           <small style="color: #999; font-size: 12px;">Leave empty for no expiry</small>
+        </div>
+
+        <div class="input-group">
+          <label><i class="fas fa-calendar-plus"></i> Campaign Start Date</label>
+          <input type="datetime-local" id="couponStartDate">
+          <small style="color: #999; font-size: 12px;">Leave empty to activate immediately</small>
         </div>
 
         <div class="input-group">
@@ -2524,6 +2536,12 @@
             <span style="color: #00ff88; font-weight: bold;">Managed by Firebase Auth</span>
           </div>
         </div>
+      </div>
+      <div class="card">
+        <h2 class="card-title"><i class="fas fa-shield-alt"></i> Operations</h2>
+        <button type="button" class="btn" id="reconciliationBtn"><i class="fas fa-balance-scale"></i> Run Payment Reconciliation</button>
+        <button type="button" class="btn" id="auditLogsBtn" style="margin-top:10px;"><i class="fas fa-history"></i> View Audit Logs</button>
+        <pre id="operationsOutput" style="white-space:pre-wrap;color:#00ff88;margin-top:15px;max-height:280px;overflow:auto;"></pre>
       </div>
     </div>
   </div>
@@ -3543,6 +3561,14 @@
       const discountPercent = parseFloat(document.getElementById('productDiscountPercent').value);
       const qrImageUrl = document.getElementById('productQrImageUrl').value.trim();
       const downloadLink = document.getElementById('productDownloadLink').value.trim();
+      const changelogLines = document.getElementById('productChangelog').value.split(/\r?\n/).map(line => line.trim()).filter(Boolean);
+      let changelog = [];
+      try {
+        changelog = changelogLines.map(line => JSON.parse(line)).filter(entry => entry.version && entry.notes).slice(0, 50);
+      } catch (_) {
+        showMessage('productSuccess', 'Each changelog line must be valid JSON.', 'error');
+        return;
+      }
 
       if (!title || !imageUrl || !description) {
         showMessage('productSuccess', 'Please fill all required fields', 'error');
@@ -3591,6 +3617,7 @@
         qrImageUrl: qrImageUrl,
         downloadLink: downloadLink,
         screenshots: validScreenshots,
+        changelog: changelog,
         updatedAt: new Date().toISOString()
       };
 
@@ -3664,6 +3691,7 @@
       document.getElementById('productDiscountPercent').value = backCalculatedPercent;
       document.getElementById('productQrImageUrl').value = product.qrImageUrl || '';
       document.getElementById('productDownloadLink').value = product.downloadLink || '';
+      document.getElementById('productChangelog').value = (product.changelog || []).map(entry => JSON.stringify(entry)).join('\n');
       
       screenshotUrls = product.screenshots || [];
       renderScreenshotUrls();
@@ -3709,6 +3737,7 @@
       document.getElementById('productDiscountPercent').value = '';
       document.getElementById('productQrImageUrl').value = '';
       document.getElementById('productDownloadLink').value = '';
+      document.getElementById('productChangelog').value = '';
       screenshotUrls = [];
       renderScreenshotUrls();
       const previewText = document.getElementById('discountPreviewText');
@@ -4162,6 +4191,7 @@
       const maxDiscount = parseFloat(document.getElementById('couponMaxDiscount').value) || 0;
       const usageLimit = parseInt(document.getElementById('couponUsageLimit').value) || 0;
       const expiryDate = document.getElementById('couponExpiryDate').value;
+      const startDate = document.getElementById('couponStartDate').value;
       const description = document.getElementById('couponDescription').value.trim();
       const autoDelete = document.getElementById('couponAutoDelete').checked;
       const isActive = document.getElementById('couponActive').checked;
@@ -4208,6 +4238,7 @@
         maxDiscount: maxDiscount,
         usageLimit: usageLimit,
         expiryDate: expiryDate || null,
+        startDate: startDate || null,
         description: description,
         autoDelete: autoDelete,
         isActive: isActive,
@@ -4265,6 +4296,7 @@
           document.getElementById('couponMaxDiscount').value = coupon.maxDiscount || 0;
           document.getElementById('couponUsageLimit').value = coupon.usageLimit || 0;
           document.getElementById('couponExpiryDate').value = coupon.expiryDate || '';
+          document.getElementById('couponStartDate').value = coupon.startDate || '';
           document.getElementById('couponDescription').value = coupon.description || '';
           document.getElementById('couponAutoDelete').checked = coupon.autoDelete !== false;
           document.getElementById('couponActive').checked = coupon.isActive;
@@ -4321,6 +4353,7 @@
       document.getElementById('couponMaxDiscount').value = '';
       document.getElementById('couponUsageLimit').value = '';
       document.getElementById('couponExpiryDate').value = '';
+      document.getElementById('couponStartDate').value = '';
       document.getElementById('couponDescription').value = '';
       document.getElementById('couponAutoDelete').checked = true;
       document.getElementById('couponActive').checked = true;
@@ -4910,6 +4943,21 @@
     }
 
     document.getElementById('createGiftCardBtn')?.addEventListener('click', createGiftCard);
+
+    async function loadOperations(path) {
+      const output = document.getElementById('operationsOutput');
+      try {
+        const token = await window.auth.currentUser.getIdToken();
+        const response = await fetch(path, { headers: { Authorization: `Bearer ${token}` } });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(data.error || 'Request failed');
+        output.textContent = JSON.stringify(data, null, 2);
+      } catch (error) {
+        output.textContent = error.message;
+      }
+    }
+    document.getElementById('reconciliationBtn')?.addEventListener('click', () => loadOperations('/api/admin/payment-reconciliation'));
+    document.getElementById('auditLogsBtn')?.addEventListener('click', () => loadOperations('/api/admin/audit-logs'));
 
     async function saveSettings() {
       const displayName = document.getElementById('settingsDisplayName').value.trim();

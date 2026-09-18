@@ -2631,6 +2631,10 @@
         </div>
         <div class="screenshots-grid" id="screenshotsGrid"></div>
       </div>
+      <div class="screenshots-section" id="changelogSection" style="display: none;">
+        <div class="screenshots-title"><i class="fas fa-code-branch"></i> Version History</div>
+        <div id="changelogList"></div>
+      </div>
 
       <div class="price-section">
         <span id="modalPriceOriginal" class="price-original"></span>
@@ -3077,6 +3081,9 @@
           <div class="menu-item" onclick="redeemGiftCardPrompt()">
             <i class="fas fa-gift"></i> Redeem Gift Card
           </div>
+          <div class="menu-item" onclick="editNotificationPreferences()">
+            <i class="fas fa-bell"></i> Notification Preferences
+          </div>
           <div class="menu-item" onclick="showBookmarks()">
             <i class="fas fa-bookmark"></i> Bookmarks
           </div>
@@ -3165,6 +3172,21 @@
       } catch (error) {
         hideLoading();
         showNotification(error.message || 'Could not open mystery box', 'error');
+      }
+    }
+
+    async function editNotificationPreferences() {
+      if (!window.currentUser) return requireLogin('edit notification preferences');
+      try {
+        await apiRequest('/api/member/notification-preferences');
+        const priceAlerts = confirm('Receive price-alert notifications?');
+        const purchaseReceipts = confirm('Receive purchase confirmation notifications?');
+        const gameRewards = confirm('Receive game and reward notifications?');
+        const supportMessages = confirm('Receive support-message notifications?');
+        await apiRequest('/api/member/notification-preferences', { method: 'PUT', body: JSON.stringify({ priceAlerts, purchaseReceipts, gameRewards, supportMessages }) });
+        showNotification('Notification preferences saved.', 'success');
+      } catch (error) {
+        showNotification(error.message || 'Could not save preferences', 'error');
       }
     }
 
@@ -3533,6 +3555,16 @@ function createProductCard(product, index) {
             screenshotsSection.style.display = 'block';
           } else {
             screenshotsSection.style.display = 'none';
+          }
+
+          const changelogSection = document.getElementById('changelogSection');
+          const changelogList = document.getElementById('changelogList');
+          const changelog = Array.isArray(product.changelog) ? product.changelog : [];
+          if (changelog.length) {
+            changelogList.innerHTML = changelog.map(entry => `<div class="hub-muted"><strong>${escapeHtml(entry.version)}</strong> — ${escapeHtml(entry.notes)}<br><small>${escapeHtml(entry.releasedAt || '')}</small></div>`).join('');
+            changelogSection.style.display = 'block';
+          } else {
+            changelogSection.style.display = 'none';
           }
 
           // Update buttons based on price
